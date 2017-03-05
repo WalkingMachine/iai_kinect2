@@ -1,4 +1,7 @@
-# IAI Kinect2
+# Walking Machine Point Cloud Preprocessing
+
+
+# old documentation below
 
 ## Maintainer
 
