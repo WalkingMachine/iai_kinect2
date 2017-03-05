@@ -146,7 +146,7 @@ public:
   {
     if(running)
     {
-      OUT_ERROR("kinect2_adapter is already running!");
+      OUT_ERROR("pclpp_adapter is already running!");
       return false;
     }
     if(!initialize())
@@ -174,7 +174,7 @@ public:
   {
     if(!running)
     {
-      OUT_ERROR("kinect2_adapter is not running!");
+      OUT_ERROR("pclpp_adapter is not running!");
       return;
     }
     running = false;
@@ -1517,7 +1517,7 @@ public:
     {
       delete pKinect2Bridge;
       pKinect2Bridge = NULL;
-      throw nodelet::Exception("Could not start kinect2_adapter!");
+      throw nodelet::Exception("Could not start pclpp_adapter!");
     }
   }
 };
@@ -1594,7 +1594,7 @@ int main(int argc, char **argv)
   }
 #endif
 
-  ros::init(argc, argv, "kinect2_adapter", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "pclpp_adapter", ros::init_options::AnonymousName);
 
   for(int argI = 1; argI < argc; ++argI)
   {

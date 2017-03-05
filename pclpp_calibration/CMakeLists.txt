@@ -44,7 +44,7 @@ endif()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES kinect2_adapter
+#  LIBRARIES pclpp_adapter
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -67,7 +67,7 @@ include_directories(include
   ${kinect2_bridge_INCLUDE_DIR}
 )
 
-add_executable(kinect2_calibration src/kinect2_calibration.cpp)
+add_executable(kinect2_calibration src/pclpp_calibration.cpp)
 target_link_libraries(kinect2_calibration
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
@@ -88,7 +88,7 @@ target_link_libraries(kinect2_calibration
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS kinect2_adapter kinect2_bridge_node
+# install(TARGETS pclpp_adapter kinect2_bridge_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
