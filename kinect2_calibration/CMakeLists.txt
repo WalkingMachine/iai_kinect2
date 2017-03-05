@@ -44,7 +44,7 @@ endif()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES kinect2_bridge
+#  LIBRARIES kinect2_adapter
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -88,7 +88,7 @@ target_link_libraries(kinect2_calibration
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS kinect2_bridge kinect2_bridge_node
+# install(TARGETS kinect2_adapter kinect2_bridge_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

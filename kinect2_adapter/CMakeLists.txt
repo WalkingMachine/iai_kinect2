@@ -41,7 +41,7 @@ find_package(OpenCV REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES kinect2_bridge
+#  LIBRARIES kinect2_adapter
   CATKIN_DEPENDS kinect2_registration
 #  DEPENDS system_lib
 )
@@ -74,7 +74,7 @@ if(DEPTH_REG_CPU)
 endif()
 add_definitions(-DK2_CALIB_PATH="${PROJECT_SOURCE_DIR}/data/")
 
-add_library(kinect2_bridge_nodelet SHARED src/kinect2_bridge.cpp)
+add_library(kinect2_bridge_nodelet SHARED src/kinect2_adapter.cpp)
 target_link_libraries(kinect2_bridge_nodelet
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
@@ -82,7 +82,7 @@ target_link_libraries(kinect2_bridge_nodelet
   ${kinect2_registration_LIBRARY}
 )
 
-add_executable(kinect2_bridge src/kinect2_bridge.cpp)
+add_executable(kinect2_bridge src/kinect2_adapter.cpp)
 target_link_libraries(kinect2_bridge
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
