@@ -1,0 +1,7 @@
+<library path="lib/libpclpp_xtion_adapter">
+    <class name="pclpp_adapters/XtionAdapterNodelet" type="pclpp_adapters::XtionAdapterNodelet" base_class_type="nodelet::Nodelet">
+        <description>
+            Base nodelet adapter for Xtion sensor.
+        </description>
+    </class>
+</library>

@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="nodelet" type="nodelet" name="standalone_nodelet"  args="manager" output="screen"/>
+
+    <node pkg="nodelet" type="nodelet" name="" args="load pclpp_adapters/XtionAdapterNodelet standalone_nodelet" output="screen">
+        <!-- <remap from="/Plus/out" to="remapped_output"/> -->
+        <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
+    </node>
+</launch>
