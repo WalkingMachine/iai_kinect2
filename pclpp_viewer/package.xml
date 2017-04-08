@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <package>
+<<<<<<< HEAD
   <name>pclpp_viewer</name>
   <version>0.0.0</version>
   <description>The pclpp_viewer package</description>
@@ -13,7 +14,7 @@
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>Apache 2.0</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
@@ -49,6 +50,5 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
   </export>
 </package>
