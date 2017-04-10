@@ -241,10 +241,4 @@ CATKIN_IGNORE
 .idea/
 cmake-build-debug
 
-CMakeLists.txt
-multiple_repo_one_dir
-package_main
-package_one
-package_two
-package_three
 
