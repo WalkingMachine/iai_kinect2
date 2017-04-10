@@ -1,1 +1,0 @@
-#include <nodelet_xtion_adapter.h>
