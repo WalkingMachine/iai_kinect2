@@ -1,4 +1,4 @@
-<library path="lib/libpclpp_kinect2_adapter">
+<library path="lib/libpclpp_adapters">
     <class name="pclpp_adapters/Kinect2AdapterNodelet" type="pclpp_adapters::Kinect2AdapterNodelet" base_class_type="nodelet::Nodelet">
         <description>
             Base nodelet adapter for Kinect2 sensor.
