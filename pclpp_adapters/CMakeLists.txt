@@ -13,6 +13,14 @@ find_package(catkin REQUIRED COMPONENTS
         std_msgs
         cv_bridge)
 
+
+find_package(PkgConfig)
+pkg_check_modules(PC_OPENNI2 libopenni2)
+if (NOT PC_OPENNI2_FOUND)
+ pkg_check_modules(PC_OPENNI2 REQUIRED openni2)
+endif()
+
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -102,12 +110,22 @@ find_package(catkin REQUIRED COMPONENTS
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+#SET(${libopenni2_LIBRARIES} /home/localhost/Softwares/openni2/Bin/x64-Release/libOpenNI2.so)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pclpp_adapters
-  CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge
-#  DEPENDS system_lib
+  CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge openni2_camera freenect_camera
+  #DEPENDS openni2_camera
 )
+
+
+#${PC_OPENNI2_INCLUDEDIR}
+#${PC_OPENNI2_INCLUDE_DIRS}
+#${PC_OPENNI2_LIBRARIES}
+#${PC_OPENNI2_LIBRARY_DIRS}
+#${PC_OPENNI2_STATIC_INCLUDE_DIRS}
+#${PC_OPENNI2_STATIC_LIBRARY_DIR}
 
 ###########
 ## Build ##
@@ -115,7 +133,10 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS}
+        ${PC_OPENNI2_INCLUDE_DIRS})
+
+link_directories(${PC_OPENNI2_LIBRARY_DIRS})
 
 ## Declare a C++ library
  add_library(${PROJECT_NAME}
@@ -130,7 +151,9 @@ INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -148,9 +171,17 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(${PROJECT_NAME}
-   ${catkin_LIBRARIES}
- )
+
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+# message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
+
+target_link_libraries(${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+        ${PC_OPENNI2_LIBRARIES}
+        )
+
 
 #############
 ## Install ##
