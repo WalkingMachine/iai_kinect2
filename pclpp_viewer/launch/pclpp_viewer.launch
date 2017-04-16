@@ -1,0 +1,10 @@
+1 kinect viewer par device
+
+s'assurer qu'elle sont partis en tant que nodelet
+
+lancer le package kinect2_viewer avec les bon PubSub pour chaque adapter
+
+faire les pubsub des differents adapter et les nommer de facon standard
+
+
+

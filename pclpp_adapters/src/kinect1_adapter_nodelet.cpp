@@ -12,3 +12,8 @@ namespace pclpp_adapters {
     }
 
 }
+
+int main(int argc, char **argv)
+{
+    ROS_INFO("HELLO WORLD --- kinect1");
+}

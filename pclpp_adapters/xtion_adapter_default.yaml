@@ -1,0 +1,4 @@
+topic_rgb_image: "/xtion_driver/rgb/image"
+topic_rgb_camera_info: "/xtion_driver/rgb/camera_info"
+topic_depth_image: "/xtion_driver/depth/image"
+topic_depth_camera_info: "/xtion_driver/depth/camera_info"

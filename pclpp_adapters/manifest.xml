@@ -1,0 +1,14 @@
+<package>
+  <description brief="pclpp_adapters">
+
+     pclpp_adapters
+
+  </description>
+  <author>rm-rf</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pclpp_adapters</url>
+
+</package>
+
+

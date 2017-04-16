@@ -28,17 +28,41 @@
           <arg name="output"            default="screen"/>
     -->
 
+    <arg name="remote_debug"                   default="true" />
+    <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver localhost:39500" />
+    <arg name="xtion_adapter_launch_prefix"    unless="$(arg remote_debug)" default="" />
 
 
-    <node pkg="nodelet" type="nodelet" name="nodelet_manager"  args="manager" output="screen"/>
 
-    <node pkg="nodelet" type="nodelet" name="xtion_adapter" args="load pclpp_adapters/XtionAdapterNodelet nodelet_manager" output="screen">
+
+    <arg name="base_name"         default="pclpp_adapters"  unless=""
+    <arg name="nodelet_manager"   default="$(arg base_name)"/>
+
+
+
+
+
+
+
+    <node   pkg="nodelet" type="nodelet" name="nodelet_manager"  args="manager" output="screen"/>
+
+    <node  launch-prefix="$(arg xtion_adapter_launch_prefix)" pkg="nodelet" type="nodelet" name="xtion_adapter" args="standalone pclpp_adapters/XtionAdapterNodelet nodelet_manager" output="screen">
         <!-- <remap from="/Plus/out" to="remapped_output"/> -->
-        <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
+        <rosparam namespace="xtion_adapter" file="$(find pclpp_adapters)/xtion_adapter_default.yaml"/>
     </node>
 
-    <node pkg="nodelet" type="nodelet" name="xtion_driver" args="load openni2_camera/OpenNI2DriverNodelet nodelet" output="screen">
+    <node pkg="nodelet" type="nodelet" name="xtion_driver" args="load openni2_camera/OpenNI2DriverNodelet nodelet_manager" output="screen">
         <remap from="/depth/camera_info" to="/xtion_driver/depth/camera_info"/>
+        <remap from="/depth/image" to="/xtion_driver/depth/image" />
+        <remap from="/depth/image/compressed" to="/xtion_driver/depth/image/compressed" />
+        <remap from="/depth/image/compressed/parameter_descriptions" to="/xtion_driver/depth/image/compressed/parameter_descriptions" />
+        <remap from="/depth/image/compressed/parameter_updates" to="/xtion_driver/depth/image/compressed/parameter_updates" />
+        <remap from="/depth/image/compressedDepth" to="/xtion_driver/depth/image/compressedDepth" />
+        <remap from="/depth/image/compressedDepth/parameter_descriptions" to="/xtion_driver/depth/image/compressedDepth/parameter_descriptions" />
+        <remap from="/depth/image/compressedDepth/parameter_updates" to="/xtion_driver/depth/image/compressedDepth/parameter_updates" />
+        <remap from="/depth/image/theora" to="/xtion_driver/depth/image/theora" />
+        <remap from="/depth/image/theora/parameter_descriptions" to="/xtion_driver/depth/image/theora/parameter_descriptions" />
+        <remap from="/depth/image/theora/parameter_updates" to="/xtion_driver/depth/image/theora/parameter_updates" />
         <remap from="/depth/image_raw" to="/xtion_driver/depth/image_raw"/>
         <remap from="/depth/image_raw/compressed" to="/xtion_driver/depth/image_raw/compressed"/>
         <remap from="/depth/image_raw/compressed/parameter_descriptions" to="/xtion_driver/depth/image_raw/compressed/parameter_descriptions"/>
@@ -49,52 +73,38 @@
         <remap from="/depth/image_raw/theora" to="/xtion_driver/depth/image_raw/theora"/>
         <remap from="/depth/image_raw/theora/parameter_descriptions" to="/xtion_driver/depth/image_raw/theora/parameter_descriptions"/>
         <remap from="/depth/image_raw/theora/parameter_updates" to="/xtion_driver/depth/image_raw/theora/parameter_updates"/>
-        <remap from="/depth_registered/camera_info" to="/xtion_driver/depth_registered/camera_info"/>
-        <remap from="/depth_registered/image_raw" to="/xtion_driver/depth_registered/image_raw"/>
-        <remap from="/depth_registered/image_raw/compressed" to="/xtion_driver/depth_registered/image_raw/compressed"/>
-        <remap from="/depth_registered/image_raw/compressed/parameter_descriptions" to="/xtion_driver/depth_registered/image_raw/compressed/parameter_descriptions"/>
-        <remap from="/depth_registered/image_raw/compressed/parameter_updates" to="/xtion_driver/depth_registered/image_raw/compressed/parameter_updates"/>
-        <remap from="/depth_registered/image_raw/compressedDepth" to="/xtion_driver/depth_registered/image_raw/compressedDepth"/>
-        <remap from="/depth_registered/image_raw/compressedDepth/parameter_descriptions" to="/xtion_driver/depth_registered/image_raw/compressedDepth/parameter_descriptions"/>
-        <remap from="/depth_registered/image_raw/compressedDepth/parameter_updates" to="/xtion_driver/depth_registered/image_raw/compressedDepth/parameter_updates"/>
-        <remap from="/depth_registered/image_raw/theora" to="/xtion_driver/depth_registered/image_raw/theora"/>
-        <remap from="/depth_registered/image_raw/theora/parameter_descriptions" to="/xtion_driver/depth_registered/image_raw/theora/parameter_descriptions"/>
-        <remap from="/depth_registered/image_raw/theora/parameter_updates" to="/xtion_driver/depth_registered/image_raw/theora/parameter_updates"/>
-        <remap from="/diagnostics" to="/xtion_driver/diagnostics"/>
         <remap from="/ir/camera_info" to="/xtion_driver/ir/camera_info"/>
-        <remap from="/ir/image_raw" to="/xtion_driver/ir/image_raw"/>
-        <remap from="/ir/image_raw/compressed" to="/xtion_driver/ir/image_raw/compressed"/>
-        <remap from="/ir/image_raw/compressed/parameter_descriptions" to="/xtion_driver/ir/image_raw/compressed/parameter_descriptions"/>
-        <remap from="/ir/image_raw/compressed/parameter_updates" to="/xtion_driver/ir/image_raw/compressed/parameter_updates"/>
-        <remap from="/ir/image_raw/compressedDepth" to="/xtion_driver/ir/image_raw/compressedDepth"/>
-        <remap from="/ir/image_raw/compressedDepth/parameter_descriptions" to="/xtion_driver/ir/image_raw/compressedDepth/parameter_descriptions"/>
-        <remap from="/ir/image_raw/compressedDepth/parameter_updates" to="/xtion_driver/ir/image_raw/compressedDepth/parameter_updates"/>
-        <remap from="/ir/image_raw/theora" to="/xtion_driver/ir/image_raw/theora"/>
-        <remap from="/ir/image_raw/theora/parameter_descriptions" to="/xtion_driver/ir/image_raw/theora/parameter_descriptions"/>
-        <remap from="/ir/image_raw/theora/parameter_updates" to="/xtion_driver/ir/image_raw/theora/parameter_updates"/>
-        <remap from="/kinect_driver/parameter_descriptions" to="/xtion_driver/kinect_driver/parameter_description"/>
-        <remap from="/kinect_driver/parameter_updates" to="/xtion_driver/kinect_driver/parameter_updates"/>
-        <remap from="/projector/camera_info" to="/xtion_driver/projector/camera_info"/>
+        <remap from="/ir/image" to="/xtion_driver/ir/image" />
+        <remap from="/ir/image/compressed" to="/xtion_driver/ir/image/compressed" />
+        <remap from="/ir/image/compressed/parameter_descriptions" to="/xtion_driver/ir/image/compressed/parameter_descriptions" />
+        <remap from="/ir/image/compressed/parameter_updates" to="/xtion_driver/ir/image/compressed/parameter_updates" />
+        <remap from="/ir/image/compressedDepth" to="/xtion_driver/ir/image/compressedDepth" />
+        <remap from="/ir/image/compressedDepth/parameter_descriptions" to="/xtion_driver/ir/image/compressedDepth/parameter_descriptions" />
+        <remap from="/ir/image/compressedDepth/parameter_updates" to="/xtion_driver/ir/image/compressedDepth/parameter_updates" />
+        <remap from="/ir/image/theora" to="/xtion_driver/ir/image/theora" />
+        <remap from="/ir/image/theora/parameter_descriptions" to="/xtion_driver/ir/image/theora/parameter_descriptions" />
+        <remap from="/ir/image/theora/parameter_updates" to="/xtion_driver/ir/image/theora/parameter_updates" />
         <remap from="/rgb/camera_info" to="/xtion_driver/rgb/camera_info"/>
-        <remap from="/rgb/image_raw" to="/xtion_driver/rgb/image_raw"/>
-        <remap from="/rgb/image_raw/compressed" to="/xtion_driver/rgb/image_raw/compressed"/>
-        <remap from="/rgb/image_raw/compressed/parameter_descriptions" to="/xtion_driver/rgb/image_raw/compressed/parameter_descriptions"/>
-        <remap from="/rgb/image_raw/compressed/parameter_updates" to="/xtion_driver/rgb/image_raw/compressed/parameter_updates"/>
-        <remap from="/rgb/image_raw/compressedDepth" to="/xtion_driver/rgb/image_raw/compressedDepth"/>
-        <remap from="/rgb/image_raw/compressedDepth/parameter_descriptions" to="/xtion_driver/rgb/image_raw/compressedDepth/parameter_descriptions"/>
-        <remap from="/rgb/image_raw/compressedDepth/parameter_updates" to="/xtion_driver/rgb/image_raw/compressedDepth/parameter_updates"/>
-        <remap from="/rgb/image_raw/theora" to="/xtion_driver/rgb/image_raw/theora"/>
-        <remap from="/rgb/image_raw/theora/parameter_descriptions" to="/xtion_driver/rgb/image_raw/theora/parameter_descriptions"/>
-        <remap from="/rgb/image_raw/theora/parameter_updates" to="/xtion_driver/rgb/image_raw/theora/parameter_updates"/>
-        <!-- <remap from="/Plus/out" to="remapped_output"/> -->
-        <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
+        <remap from="/rgb/image" to="/xtion_driver/rgb/image" />
+        <remap from="/rgb/image/compressed" to="/xtion_driver/rgb/image/compressed" />
+        <remap from="/rgb/image/compressed/parameter_descriptions" to="/xtion_driver/rgb/image/compressed/parameter_descriptions" />
+        <remap from="/rgb/image/compressed/parameter_updates" to="/xtion_driver/rgb/image/compressed/parameter_updates" />
+        <remap from="/rgb/image/compressedDepth" to="/xtion_driver/rgb/image/compressedDepth" />
+        <remap from="/rgb/image/compressedDepth/parameter_descriptions" to="/xtion_driver/rgb/image/compressedDepth/parameter_descriptions" />
+        <remap from="/rgb/image/compressedDepth/parameter_updates" to="/xtion_driver/rgb/image/compressedDepth/parameter_updates" />
+        <remap from="/rgb/image/theora" to="/xtion_driver/rgb/image/theora" />
+        <remap from="/rgb/image/theora/parameter_descriptions" to="/xtion_driver/rgb/image/theora/parameter_descriptions" />
+        <remap from="/rgb/image/theora/parameter_updates" to="/xtion_driver/rgb/image/theora/parameter_updates" />
     </node>
+    <!-- <remap from="/Plus/out" to="remapped_output"/> -->
+    <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
 
     <node pkg="nodelet" type="nodelet" name="kinect1_adapter" args="load pclpp_adapters/Kinect1AdapterNodelet nodelet_manager" output="screen">
 
         <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
     </node>
 
+    <!--
     <node pkg="nodelet" type="nodelet" name="kinect_driver" args="load freenect_camera/driver nodelet_manager" output="screen">
         <remap from="/depth/camera_info" to="/kinect1_driver/depth/camera_info"/>
         <remap from="/depth/image_raw" to="/kinect1_driver/depth/image_raw"/>
@@ -145,16 +155,17 @@
         <remap from="/rgb/image_raw/theora/parameter_descriptions" to="/kinect1_driver/rgb/image_raw/theora/parameter_descriptions"/>
         <remap from="/rgb/image_raw/theora/parameter_updates" to="/kinect1_driver/rgb/image_raw/theora/parameter_updates"/>
 
-        <!-- <remap from="/Plus/out" to="remapped_output"/> -->
-        <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
-    </node>
+    </node>-->
 
+    <!-- <remap from="/Plus/out" to="remapped_output"/> -->
+    <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
 
     <node pkg="nodelet" type="nodelet" name="kinect2_adapter" args="load pclpp_adapters/Kinect2AdapterNodelet nodelet_manager" output="screen">
         <!-- <remap from="/Plus/out" to="remapped_output"/> -->
         <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
     </node>
 
+    <!--
     <node pkg="nodelet" type="nodelet" name="kinect2_driver" args="load kinect2_bridge/kinect2_bridge_nodelet nodelet_manager" output="screen">
         <remap from="/depth/camera_info" to="/kinect2_driver/depth/camera_info"/>
         <remap from="/depth/image_raw" to="/kinect2_driver/depth/image_raw"/>
@@ -204,10 +215,10 @@
         <remap from="/rgb/image_raw/theora" to="/kinect2_driver/rgb/image_raw/theora"/>
         <remap from="/rgb/image_raw/theora/parameter_descriptions" to="/kinect2_driver/rgb/image_raw/theora/parameter_descriptions"/>
         <remap from="/rgb/image_raw/theora/parameter_updates" to="/kinect2_driver/rgb/image_raw/theora/parameter_updates"/>
-        <!-- <remap from="/Plus/out" to="remapped_output"/> -->
-        <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
-    </node>
 
+    </node>-->
+    <!-- <remap from="/Plus/out" to="remapped_output"/> -->
+    <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
 
     <!-- sd point cloud (512 x 424) -->
     <!--

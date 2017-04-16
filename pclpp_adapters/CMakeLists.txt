@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pclpp_adapters)
 
+
 ## Add support for C++11, supported in ROS Kinetic and newer
 # add_definitions(-std=c++11)
 
-## Find catkin macros and libraries
+## Find catkin macros and libraies
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
         roscpp
         nodelet
         std_msgs
-        cv_bridge)
+        cv_bridge
+        image_transport
+        message_filters)
 
 
 find_package(PkgConfig)
@@ -115,7 +118,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pclpp_adapters
-  CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge openni2_camera freenect_camera
+  CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge openni2_camera freenect_camera image_transport
   #DEPENDS openni2_camera
 )
 
@@ -139,26 +142,47 @@ INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS}
 link_directories(${PC_OPENNI2_LIBRARY_DIRS})
 
 ## Declare a C++ library
- add_library(${PROJECT_NAME}
-         include/pclpp_adapters/xtion_adapter_nodelet.h
-         include/pclpp_adapters/kinect1_adapter_nodelet.h
-         include/pclpp_adapters/kinect2_adapter_nodelet.h
-         src/xtion_adapter_nodelet.cpp
-         src/kinect1_adapter_nodelet.cpp
-         src/kinect2_adapter_nodelet.cpp
- )
-
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME}
-        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-        ${catkin_EXPORTED_TARGETS})
+#add_library(${PROJECT_NAME}
+#        include/pclpp_adapters/xtion_adapter_nodelet.h
+#        include/pclpp_adapters/kinect1_adapter_nodelet.h
+#        include/pclpp_adapters/kinect2_adapter_nodelet.h
+#        src/xtion_adapter_nodelet.cpp
+#        src/kinect1_adapter_nodelet.cpp
+#        src/kinect2_adapter_nodelet.cpp
+#        )
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/dumb_node.cpp)
+add_executable(xtion_adapter_node include/pclpp_adapters/xtion_adapter_nodelet.h src/xtion_adapter_nodelet.cpp)
+add_executable(kinect1_adapter_node include/pclpp_adapters/kinect1_adapter_nodelet.h src/kinect1_adapter_nodelet.cpp)
+add_executable(kinect2_adapter_node include/pclpp_adapters/kinect2_adapter_nodelet.h src/kinect2_adapter_nodelet.cpp)
+#rosbuild_add_executable(xtion_adapter_node include/pclpp_adapters/xtion_adapter_nodelet.h src/xtion_adapter_nodelet.cpp)
+#rosbuild_add_executable(kinect1_adapter_node include/pclpp_adapters/kinect1_adapter_nodelet.h src/kinect1_adapter_nodelet.cpp)
+#rosbuild_add_executable(kinect2_adapter_node include/pclpp_adapters/kinect2_adapter_nodelet.h src/kinect2_adapter_nodelet.cpp)
+
+
+## Add cmake target dependencies of the library
+## as an example, code may need to be generated before libraries
+## either from message generation or dynamic reconfigure
+#add_dependencies(${PROJECT_NAME}
+#        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+#        ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(xtion_adapter_node
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(kinect1_adapter_node
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(kinect2_adapter_node
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
+
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -177,7 +201,22 @@ add_dependencies(${PROJECT_NAME}
 # message(STATUS "${_variableName}=${${_variableName}}")
 #endforeach()
 
-target_link_libraries(${PROJECT_NAME}
+#target_link_libraries(${PROJECT_NAME}
+#        ${catkin_LIBRARIES}
+#        ${PC_OPENNI2_LIBRARIES}
+#        )
+
+target_link_libraries(xtion_adapter_node
+        ${catkin_LIBRARIES}
+        ${PC_OPENNI2_LIBRARIES}
+        )
+
+target_link_libraries(kinect1_adapter_node
+        ${catkin_LIBRARIES}
+        ${PC_OPENNI2_LIBRARIES}
+        )
+
+target_link_libraries(kinect2_adapter_node
         ${catkin_LIBRARIES}
         ${PC_OPENNI2_LIBRARIES}
         )
@@ -198,18 +237,18 @@ target_link_libraries(${PROJECT_NAME}
 # )
 
 ## Mark executables and/or libraries for installation
- install(TARGETS ${PROJECT_NAME}
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+# install(TARGETS ${PROJECT_NAME}
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark cpp header files for installation
- install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-   FILES_MATCHING PATTERN "*.h"
-   PATTERN ".svn" EXCLUDE
- )
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
