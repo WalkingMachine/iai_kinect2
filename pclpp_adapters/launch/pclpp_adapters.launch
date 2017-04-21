@@ -29,26 +29,16 @@
     -->
 
     <arg name="remote_debug"                   default="true" />
-    <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver localhost:39500" />
+    <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver :39500" />
     <arg name="xtion_adapter_launch_prefix"    unless="$(arg remote_debug)" default="" />
 
-
-
-
-    <arg name="base_name"         default="pclpp_adapters"  unless=""
+    <arg name="base_name"         default="pclpp_adapters"/>
     <arg name="nodelet_manager"   default="$(arg base_name)"/>
 
+    <node  pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
 
-
-
-
-
-
-    <node   pkg="nodelet" type="nodelet" name="nodelet_manager"  args="manager" output="screen"/>
-
-    <node  launch-prefix="$(arg xtion_adapter_launch_prefix)" pkg="nodelet" type="nodelet" name="xtion_adapter" args="standalone pclpp_adapters/XtionAdapterNodelet nodelet_manager" output="screen">
-        <!-- <remap from="/Plus/out" to="remapped_output"/> -->
-        <rosparam namespace="xtion_adapter" file="$(find pclpp_adapters)/xtion_adapter_default.yaml"/>
+    <node  launch-prefix="$(arg xtion_adapter_launch_prefix)" pkg="nodelet" type="nodelet" name="xtion_adapter" args="load pclpp_adapters/XtionAdapterNodelet nodelet_manager" output="screen">
+        <rosparam file="$(find pclpp_adapters)/xtion_adapter_default.yaml"/>
     </node>
 
     <node pkg="nodelet" type="nodelet" name="xtion_driver" args="load openni2_camera/OpenNI2DriverNodelet nodelet_manager" output="screen">
@@ -99,13 +89,15 @@
     <!-- <remap from="/Plus/out" to="remapped_output"/> -->
     <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
 
+
+
     <node pkg="nodelet" type="nodelet" name="kinect1_adapter" args="load pclpp_adapters/Kinect1AdapterNodelet nodelet_manager" output="screen">
 
         <!-- <rosparam file="$(find nodelet_tutorial_math)/plus_default.yaml"/> -->
     </node>
 
     <!--
-    <node pkg="nodelet" type="nodelet" name="kinect_driver" args="load freenect_camera/driver nodelet_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="kinect_driver" args="load freenect_camera/driver $(arg nodelet_manager)" output="screen">
         <remap from="/depth/camera_info" to="/kinect1_driver/depth/camera_info"/>
         <remap from="/depth/image_raw" to="/kinect1_driver/depth/image_raw"/>
         <remap from="/depth/image_raw/compressed" to="/kinect1_driver/depth/image_raw/compressed"/>
@@ -166,7 +158,7 @@
     </node>
 
     <!--
-    <node pkg="nodelet" type="nodelet" name="kinect2_driver" args="load kinect2_bridge/kinect2_bridge_nodelet nodelet_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="kinect2_driver" args="load kinect2_bridge/kinect2_bridge_nodelet $(arg nodelet_manager)" output="screen">
         <remap from="/depth/camera_info" to="/kinect2_driver/depth/camera_info"/>
         <remap from="/depth/image_raw" to="/kinect2_driver/depth/image_raw"/>
         <remap from="/depth/image_raw/compressed" to="/kinect2_driver/depth/image_raw/compressed"/>

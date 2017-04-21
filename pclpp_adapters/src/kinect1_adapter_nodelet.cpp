@@ -11,9 +11,11 @@ namespace pclpp_adapters {
         NODELET_INFO("Kinect1AdapterNodelet initialized");
     }
 
+    int Kinect1AdapterNodelet::main(int argc, char **argv) {
+
+        ROS_INFO("Kinect1AdapterNodelet initialized as node");
+        return 0;
+    }
+
 }
 
-int main(int argc, char **argv)
-{
-    ROS_INFO("HELLO WORLD --- kinect1");
-}

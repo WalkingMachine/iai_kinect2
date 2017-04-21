@@ -1,8 +1,11 @@
 <launch>
 
-    <node pkg="pclpp_adapters" type="xtion_adapter_node" name="xtion_adapter" output="screen">
-        <rosparam namespace="xtion_adapter" file="$(find pclpp_adapters)/xtion_adapter_default.yaml"/>
+    <arg name="remote_debug"                   default="true" />
+    <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver :39500" />
+    <arg name="xtion_adapter_launch_prefix"    unless="$(arg remote_debug)" default="" />
 
+    <node launch-prefix="$(arg xtion_adapter_launch_prefix)" pkg="pclpp_adapters" type="xtion_adapter_node" name="xtion_adapter" output="screen">
+        <rosparam file="$(find pclpp_adapters)/xtion_adapter_default.yaml"/>
     </node>
 
     <node pkg="openni2_camera" type="openni2_camera_node" name="xtion_driver" output="screen">

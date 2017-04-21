@@ -142,21 +142,30 @@ INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS}
 link_directories(${PC_OPENNI2_LIBRARY_DIRS})
 
 ## Declare a C++ library
-#add_library(${PROJECT_NAME}
-#        include/pclpp_adapters/xtion_adapter_nodelet.h
-#        include/pclpp_adapters/kinect1_adapter_nodelet.h
-#        include/pclpp_adapters/kinect2_adapter_nodelet.h
-#        src/xtion_adapter_nodelet.cpp
-#        src/kinect1_adapter_nodelet.cpp
-#        src/kinect2_adapter_nodelet.cpp
-#        )
+add_library(${PROJECT_NAME}
+        include/pclpp_adapters/xtion_adapter_nodelet.h
+        include/pclpp_adapters/kinect1_adapter_nodelet.h
+        include/pclpp_adapters/kinect2_adapter_nodelet.h
+        src/xtion_adapter_nodelet.cpp
+        src/kinect1_adapter_nodelet.cpp
+        src/kinect2_adapter_nodelet.cpp
+        )
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(xtion_adapter_node include/pclpp_adapters/xtion_adapter_nodelet.h src/xtion_adapter_nodelet.cpp)
-add_executable(kinect1_adapter_node include/pclpp_adapters/kinect1_adapter_nodelet.h src/kinect1_adapter_nodelet.cpp)
-add_executable(kinect2_adapter_node include/pclpp_adapters/kinect2_adapter_nodelet.h src/kinect2_adapter_nodelet.cpp)
+add_executable(xtion_adapter_node
+        include/pclpp_adapters/xtion_adapter_nodelet.h
+        src/xtion_adapter_nodelet.cpp
+        src/xtion_adapter_node.cpp)
+add_executable(kinect1_adapter_node
+        include/pclpp_adapters/kinect1_adapter_nodelet.h
+        src/kinect1_adapter_nodelet.cpp
+        src/kinect1_adapter_node.cpp)
+add_executable(kinect2_adapter_node
+        include/pclpp_adapters/kinect2_adapter_nodelet.h
+        src/kinect2_adapter_nodelet.cpp
+        src/kinect2_adapter_node.cpp)
 #rosbuild_add_executable(xtion_adapter_node include/pclpp_adapters/xtion_adapter_nodelet.h src/xtion_adapter_nodelet.cpp)
 #rosbuild_add_executable(kinect1_adapter_node include/pclpp_adapters/kinect1_adapter_nodelet.h src/kinect1_adapter_nodelet.cpp)
 #rosbuild_add_executable(kinect2_adapter_node include/pclpp_adapters/kinect2_adapter_nodelet.h src/kinect2_adapter_nodelet.cpp)
@@ -165,9 +174,9 @@ add_executable(kinect2_adapter_node include/pclpp_adapters/kinect2_adapter_nodel
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-#add_dependencies(${PROJECT_NAME}
-#        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-#        ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(xtion_adapter_node
         ${${PROJECT_NAME}_EXPORTED_TARGETS}

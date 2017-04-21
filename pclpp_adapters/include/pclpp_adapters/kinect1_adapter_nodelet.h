@@ -12,6 +12,9 @@ namespace pclpp_adapters {
         Kinect1AdapterNodelet();
         ~Kinect1AdapterNodelet();
 
+        int main(int argc, char **argv);
+
+    private:
         void onInit();
     };
 

@@ -1,10 +1,6 @@
 #include "../include/pclpp_adapters/xtion_adapter_nodelet.h"
 
-#include <libfreenect2/libfreenect2.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/synchronizer.h>
-#include <std_msgs/String.h>
+
 /*
  *
  * http://ros-users.122217.n3.nabble.com/debugging-nodelets-td2370662.html
@@ -68,13 +64,3 @@ namespace pclpp_adapters {
     }
 }
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "xtion_adapter");
-    pclpp_adapters::XtionAdapterNodelet xtionAdapter;
-
-
-    ROS_INFO("HELLO WORLD -- xtion");
-
-    return xtionAdapter.main(argc, argv);
-}
