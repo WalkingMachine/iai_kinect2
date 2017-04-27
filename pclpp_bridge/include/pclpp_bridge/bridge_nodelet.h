@@ -1,6 +1,5 @@
-//
-// Created by localhost on 10/04/17.
-//
+
+#include <ros/ros.h>
 
 #ifndef WM_PCL_PREPROCESSING_BRIDGE_NODELET_H
 #define WM_PCL_PREPROCESSING_BRIDGE_NODELET_H

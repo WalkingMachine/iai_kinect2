@@ -9,6 +9,7 @@
     </node>
 
     <node pkg="openni2_camera" type="openni2_camera_node" name="xtion_driver" output="screen">
+
         <remap from="/depth/camera_info" to="/xtion_driver/depth/camera_info"/>
         <remap from="/depth/image" to="/xtion_driver/depth/image" />
         <remap from="/depth/image/compressed" to="/xtion_driver/depth/image/compressed" />
@@ -52,6 +53,11 @@
         <remap from="/rgb/image/theora" to="/xtion_driver/rgb/image/theora" />
         <remap from="/rgb/image/theora/parameter_descriptions" to="/xtion_driver/rgb/image/theora/parameter_descriptions" />
         <remap from="/rgb/image/theora/parameter_updates" to="/xtion_driver/rgb/image/theora/parameter_updates" />
+
+        <rosparam param="/xtion_driver/ir_mode">5</rosparam>
+        <rosparam param="/xtion_driver/depth_mode">5</rosparam>
+        <rosparam param="/xtion_driver/color_mode">1</rosparam>
+        <rosparam param="/xtion_driver/color_depth_synchronization">true</rosparam>
     </node>
 
 </launch>

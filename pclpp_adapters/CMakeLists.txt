@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pclpp_adapters)
-
-
-## Add support for C++11, supported in ROS Kinetic and newer
-# add_definitions(-std=c++11)
+SET(CMAKE_CXX_STANDARD 11)
+add_definitions(-std=c++11)
 
 ## Find catkin macros and libraies
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -14,7 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
         std_msgs
         cv_bridge
         image_transport
-        message_filters)
+        message_filters
+        pcl_ros)
 
 
 find_package(PkgConfig)

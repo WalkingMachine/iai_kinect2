@@ -28,7 +28,7 @@
           <arg name="output"            default="screen"/>
     -->
 
-    <arg name="remote_debug"                   default="true" />
+    <arg name="remote_debug"                   default="false" />
     <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver :39500" />
     <arg name="xtion_adapter_launch_prefix"    unless="$(arg remote_debug)" default="" />
 
