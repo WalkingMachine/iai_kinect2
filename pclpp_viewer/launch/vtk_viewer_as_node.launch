@@ -9,8 +9,11 @@ faire les pubsub des differents adapter et les nommer de facon standard
 -->
 <launch>
     <arg name="remote_debug"                   default="true" /
-    <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver :39500" />
-    <arg name="xtion_adapter_launch_prefix"    unless="$(arg remote_debug)" default="" />
+    <arg name="vtk_viewer_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver :39500" />
+    <arg name="vtk_viewer_launch_prefix"    unless="$(arg remote_debug)" default="" />
+
+
+
 </launch>
 
 

@@ -117,7 +117,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pclpp_adapters
-  CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge openni2_camera freenect_camera image_transport
+  CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge openni2_camera freenect_camera image_transport pcl_ros
   #DEPENDS openni2_camera
 )
 

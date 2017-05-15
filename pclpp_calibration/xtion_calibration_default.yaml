@@ -1,0 +1,9 @@
+calibration_path: "cfg/"
+calibration_symmetric: true
+calibration_circle_board: false
+calibration_board_dims: [7, 6]
+calibration_board_size: 0.108
+calibration_source_mode: "RGB"
+topic_rgb_image: "/xtion_adapter/rgb/image"
+topic_depth_image: "/xtion_adapter/depth/image"
+topic_ir_image: "/xtion_adapter/ir/image"

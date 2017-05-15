@@ -12,9 +12,6 @@ namespace pclpp_adapters {
     : nh("~"), it(nh), queueSize(10), useExact(true), useCompressed(false),
       preparedMake3D(false)
     {
-
-
-
         nh.getParam("/xtion_adapter/topic_rgb_image", imageRGBTopic);
         nh.getParam("/xtion_adapter/topic_rgb_camera_info", imageRGBCameraInfoTopic);
         nh.getParam("/xtion_adapter/topic_rgb_cv_bridge_image_mat", cvImageRGBTopic);

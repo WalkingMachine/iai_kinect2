@@ -98,7 +98,7 @@ namespace pclpp_adapters {
         boost::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB> > pclPointCloud;
     };
 
-    PLUGINLIB_DECLARE_CLASS(pclwpp_adapters, XtionAdapterNodelet, pclpp_adapters::XtionAdapterNodelet, nodelet::Nodelet)
+    PLUGINLIB_DECLARE_CLASS(pclpp_adapters, XtionAdapterNodelet, pclpp_adapters::XtionAdapterNodelet, nodelet::Nodelet)
 }
 
 #endif //PCL_PREPROCESSING_XTION_ADAPTER_NODELET_H

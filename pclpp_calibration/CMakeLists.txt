@@ -1,20 +1,29 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pclpp_viewer)
-
+project(pclpp_calibration)
 SET(CMAKE_CXX_STANDARD 11)
 add_definitions(-std=c++11)
+
+## Add support for C++11, supported in ROS Kinetic and newer
+# add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
         roscpp
-        nodelet
+        rostime
         std_msgs
+        nodelet
+        sensor_msgs
+        message_filters
         cv_bridge
         image_transport
-        message_filters
-        pcl_ros)
+        compressed_image_transport
+        compressed_depth_image_transport
+        pclpp_bridge)
+
+## System dependencies are found with CMake's conventions
+find_package(OpenCV 3.2 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -105,12 +114,14 @@ find_package(catkin REQUIRED COMPONENTS
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+
 catkin_package(
         INCLUDE_DIRS include
-        LIBRARIES pclpp_viewer
-        CATKIN_DEPENDS roscpp nodelet std_msgs cv_bridge
-        #  DEPENDS system_lib
+        LIBRARIES pclpp_calibration
+        CATKIN_DEPENDS roscpp nodelet rostime std_msgs sensor_msgs message_filters cv_bridge image_transport compressed_image_transport compressed_depth_image_transport pclpp_bridge
+        #DEPENDS
 )
+
 
 ###########
 ## Build ##
@@ -118,38 +129,57 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+# include_directories(include)
 INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 
-## Declare a C++ library
 add_library(${PROJECT_NAME}
-        include/pclpp_viewer/vtk_viewer_nodelet.h
-        src/vtk_viewer_nodelet.cpp
+        include/pclpp_calibration/calibration_definitions.h
+        include/pclpp_calibration/calibration_common.h
+        include/pclpp_calibration/xtion_calibration_nodelet.h
+        include/pclpp_calibration/kinect1_calibration_nodelet.h
+        include/pclpp_calibration/kinect2_calibration_nodelet.h
+        src/calibration_common.cpp
+        src/xtion_calibration_nodelet.cpp
+        src/kinect1_calibration_nodelet.cpp
+        src/kinect2_calibration_nodelet.cpp
         )
 
-add_executable(vtk_viewer_node
-        include/pclpp_viewer/vtk_viewer_nodelet.h
-        src/vtk_viewer_nodelet.cpp
-        src/vtk_viewer_node.cpp)
-
+## Declare a C++ library
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/pclpp_calibration.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-add_dependencies(${PROJECT_NAME}
-        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-        ${catkin_EXPORTED_TARGETS})
-
-add_dependencies(vtk_viewer_node
-        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-        ${catkin_EXPORTED_TARGETS})
-
+# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/dumb_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/pclpp_calibration_node.cpp)
+
+add_executable(xtion_calibration_node
+        include/pclpp_calibration/calibration_definitions.h
+        include/pclpp_calibration/calibration_common.h
+        include/pclpp_calibration/xtion_calibration_nodelet.h
+        src/calibration_common.cpp
+        src/xtion_calibration_nodelet.cpp
+        src/xtion_calibration_node.cpp)
+add_executable(kinect1_calibration_node
+        include/pclpp_calibration/calibration_definitions.h
+        include/pclpp_calibration/calibration_common.h
+        include/pclpp_calibration/kinect1_calibration_nodelet.h
+        src/calibration_common.cpp
+        src/kinect1_calibration_nodelet.cpp
+        src/kinect1_calibration_node.cpp)
+add_executable(kinect2_calibration_node
+        include/pclpp_calibration/calibration_definitions.h
+        include/pclpp_calibration/calibration_common.h
+        include/pclpp_calibration/kinect2_calibration_nodelet.h
+        src/calibration_common.cpp
+        src/kinect2_calibration_nodelet.cpp
+        src/kinect2_calibration_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -161,14 +191,39 @@ add_dependencies(vtk_viewer_node
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(${PROJECT_NAME}
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(xtion_calibration_node
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(kinect1_calibration_node
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(kinect2_calibration_node
+        ${${PROJECT_NAME}_EXPORTED_TARGETS}
+        ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
+
+target_link_libraries(xtion_calibration_node
         ${catkin_LIBRARIES}
         )
 
-target_link_libraries(vtk_viewer_node
+target_link_libraries(kinect1_calibration_node
         ${catkin_LIBRARIES}
         )
+
+target_link_libraries(kinect2_calibration_node
+        ${catkin_LIBRARIES}
+        )
+
 
 #############
 ## Install ##
@@ -185,18 +240,18 @@ target_link_libraries(vtk_viewer_node
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME}
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        )
+# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-        FILES_MATCHING PATTERN "*.h"
-        PATTERN ".svn" EXCLUDE
-        )
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -210,7 +265,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_dumb.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_pclpp_calibration.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
