@@ -31,7 +31,9 @@ namespace pclpp_calibration {
     class XtionCalibrationNodelet : public nodelet::Nodelet {
     public:
 
-        XtionCalibrationNodelet();
+        XtionCalibrationNodelet(std::string &calibration_name = *(std::string *)NULL,
+                                boost::shared_ptr<ros::NodeHandle> &n_h = *(boost::shared_ptr<ros::NodeHandle> *)NULL,
+                                image_transport::ImageTransport &i_t = *(image_transport::ImageTransport *)NULL);
         ~XtionCalibrationNodelet();
 
         int main(int argc, char **argv);
@@ -65,6 +67,7 @@ namespace pclpp_calibration {
         std::string path;
         std::string topicColor, topicIr, topicDepth;
         std::mutex lock;
+        const std::string calibrationName;
 
         bool update;
         bool foundColor, foundIr;
@@ -77,7 +80,8 @@ namespace pclpp_calibration {
         std::vector<cv::Point2f> pointsColor, pointsIr;
 
         typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::Image> ColorIrDepthSyncPolicy;
-        ros::NodeHandle nh;
+
+        boost::shared_ptr<ros::NodeHandle> nh;
         ros::AsyncSpinner spinner;
         image_transport::ImageTransport it;
         image_transport::SubscriberFilter *subImageColor, *subImageIr, *subImageDepth;

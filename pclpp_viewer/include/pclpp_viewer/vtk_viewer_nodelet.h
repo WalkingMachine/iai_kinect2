@@ -13,6 +13,8 @@
 #include <thread>
 #include <chrono>
 
+#include <ros/ros.h>
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -52,7 +54,10 @@ namespace pclpp_viewer {
             BOTH
         };
 
-        VTKViewerNodelet(const bool useExact = false, const bool useCompressed = false);
+        VTKViewerNodelet(std::string &viewer_name = *(std::string *)NULL,
+                         boost::shared_ptr<ros::NodeHandle> &n_h = *(boost::shared_ptr<ros::NodeHandle> *)NULL,
+                         image_transport::ImageTransport &i_t = *(image_transport::ImageTransport *)NULL,
+                         const bool useExact = false, const bool useCompressed = false);
 
         ~VTKViewerNodelet();
 
@@ -63,9 +68,12 @@ namespace pclpp_viewer {
         void run(const Mode mode);
         void start(const Mode mode);
         void stop();
-        void callback(const sensor_msgs::Image::ConstPtr imageColor, const sensor_msgs::Image::ConstPtr imageDepth,
+        void adapterNodeletCallback(const sensor_msgs::Image::ConstPtr imageColor, const sensor_msgs::Image::ConstPtr imageDepth,
                       const sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
                       const sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth);
+        void adapterNodeCallback(sensor_msgs::Image::ConstPtr imageColor, sensor_msgs::Image::ConstPtr imageDepth,
+                                 sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
+                                 sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth);
         void imageViewer();
         void cloudViewer();
         void keyboardEvent(const pcl::visualization::KeyboardEvent &event, void *);
@@ -79,13 +87,15 @@ namespace pclpp_viewer {
 
         std::mutex lock;
 
-        std::string topicColor, topicDepth;
+        const std::string viewerName, adapterName;
+        const std::string imageColorTopic, imageDepthTopic, imageColorCameraInfoTopic,
+                imageDepthCameraInfoTopic;
         const bool useExact, useCompressed;
 
         bool updateImage, updateCloud;
         bool save;
         bool running;
-        size_t frame;
+        size_t  frame;
         const uint32_t queueSize;
 
         cv::Mat color, depth;
@@ -95,7 +105,7 @@ namespace pclpp_viewer {
         typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> ExactSyncPolicy;
         typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> ApproximateSyncPolicy;
 
-        ros::NodeHandle nh;
+        boost::shared_ptr<ros::NodeHandle> nh;
         ros::AsyncSpinner spinner;
         image_transport::ImageTransport it;
         image_transport::SubscriberFilter *subImageColor, *subImageDepth;
@@ -114,7 +124,7 @@ namespace pclpp_viewer {
 
     };
 
-    PLUGINLIB_DECLARE_CLASS(pclpp_viewer, VTKViewerNodelet, pclpp_viewer::VTKViewerNodelet, nodelet::Nodelet);
+    //PLUGINLIB_DECLARE_CLASS(pclpp_viewer, VTKViewerNodelet, pclpp_viewer::VTKViewerNodelet, nodelet::Nodelet);
 }
 
 #endif //WM_PCL_PREPROCESSING_VTK_VIEWER_NODELET_H

@@ -1,0 +1,13 @@
+definitions:
+  calib_color_file: "calib_color.yaml"
+  calib_ir_file: "calib_ir.yaml"
+  calib_pose_file: "calib_pose.yaml"
+  calib_depth_file: "calib_depth.yaml"
+  calib_camera_matrix: "cameraMatrix"
+  calib_distortion: "distortionCoefficients"
+  calib_rotation: "rotation"
+  calib_projection: "projection"
+  calib_translation: "translation"
+  calib_essential: "essential"
+  calib_fundamental: "fundamental"
+  calib_depth_shift: "depthShift"

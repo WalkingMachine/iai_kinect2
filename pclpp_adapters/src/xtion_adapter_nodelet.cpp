@@ -8,45 +8,94 @@
 
 namespace pclpp_adapters {
 
-    XtionAdapterNodelet::XtionAdapterNodelet()
-    : nh("~"), it(nh), queueSize(10), useExact(true), useCompressed(false),
-      preparedMake3D(false)
+    XtionAdapterNodelet::XtionAdapterNodelet(const char *adapter_name,
+                                             boost::shared_ptr<ros::NodeHandle> &n_h,
+                                             image_transport::ImageTransport &i_t)
+            : nh((&n_h != NULL) ? n_h : boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(adapter_name))),
+              it((&i_t != NULL) ? i_t : image_transport::ImageTransport(*nh)),
+              queueSize(10), useExact(true), useCompressed(false), preparedMake3D(false), pointCloudAssigned(false),
+              hints(useCompressed ? "compressed" : "raw"),
+              adapterName("/" + std::string(adapter_name)),
+              driverName(ros::param::param(
+                      "/pcl_preprocessing" + adapterName + "/driver_namespace", std::string(std::string("")))),
+              adapterPubFrameId(ros::param::param<std::string>(
+                      "/pcl_preprocessing" + adapterName + "/frame_id",std::string(std::string("")))),
+              calibrationPath(ros::param::param<std::string>(
+                      "/pcl_preprocessing" + adapterName + "/calibration_path", std::string(std::string("")))),
+              imageRGBTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/rgb/image", std::string(""))),
+              imageRGBCameraInfoTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/rgb/camera_info", std::string(""))),
+              imageDepthTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/depth/image", std::string(""))),
+              imageDepthCameraInfoTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/depth/camera_info", std::string(""))),
+              imageIrTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/ir/image", std::string(""))),
+              imageIrCameraInfoTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/ir/camera_info", std::string(""))),
+              pclPointCloudTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/pcl/point_cloud", std::string(""))),
+              imageRGBDriverTopic(driverName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/rgb/image", std::string(""))),
+              imageRGBCameraInfoDriverTopic(driverName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/rgb/camera_info", std::string(""))),
+              imageDepthDriverTopic(driverName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/depth/image", std::string(""))),
+              imageDepthCameraInfoDriverTopic(driverName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/depth/camera_info", std::string(""))),
+              imageIrDriverTopic(driverName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/ir/image", std::string(""))),
+              imageIrCameraInfoDriverTopic(driverName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/ir/camera_info", std::string(""))),
+              pubCameraInfoColor(nh->advertise<sensor_msgs::CameraInfo>(imageRGBCameraInfoTopic, 10)),
+              pubCameraInfoDepth(nh->advertise<sensor_msgs::CameraInfo>(imageDepthCameraInfoTopic, 10)),
+              pubCameraInfoIr(nh->advertise<sensor_msgs::CameraInfo>(imageIrCameraInfoTopic, 10)),
+              pubPointCloud(*nh, pclPointCloudTopic, 10),
+              subImageColor(new image_transport::SubscriberFilter(it, imageRGBDriverTopic, queueSize, hints)),
+              subImageDepth(new image_transport::SubscriberFilter(it, imageDepthDriverTopic, queueSize, hints)),
+              subCameraInfoColor(new message_filters::Subscriber<sensor_msgs::CameraInfo>(
+                      *nh, imageRGBCameraInfoDriverTopic, queueSize)),
+              subCameraInfoDepth(new message_filters::Subscriber<sensor_msgs::CameraInfo>(
+                      *nh, imageDepthCameraInfoDriverTopic, queueSize)),
+              syncApproximate(new message_filters::Synchronizer<ApproximateSyncPolicy>(
+                      ApproximateSyncPolicy(queueSize), *subImageColor, *subImageDepth,
+                      *subCameraInfoColor, *subCameraInfoDepth)),
+              imageRGB(new sensor_msgs::Image()),
+              imageDepth(new sensor_msgs::Image()),
+              imageRGBCameraInfo(new sensor_msgs::CameraInfo()),
+              imageDepthCameraInfo(new sensor_msgs::CameraInfo()),
+              cvImageColor(new cv_bridge::CvImage()),
+              cvImageDepth(new cv_bridge::CvImage()),
+              cvImageScaledDepth(new cv_bridge::CvImage()),
+              pclPointCloud(new pcl::PointCloud<pcl::PointXYZRGB>),
+              big_mat(new cv::Mat(1280, 1024, CV_32F)),
+              concat_matrices(new std::vector< cv::Mat >()),
+              m_color(new cv::Mat(1280, 1024, CV_8UC4)),
+              m_depth(new cv::Mat(len_1d, 1, CV_32F)),
+              m_x_map(new cv::Mat(len_1d, 1, CV_32F)),
+              m_x_mapping(new cv::Mat(len_1d, 1, CV_32F)),
+              m_y_map(new cv::Mat(len_1d, 1, CV_32F)),
+              m_y_mapping(new cv::Mat(len_1d, 1, CV_32F)),
+              m_filler(new cv::Mat(len_1d, 1, CV_32F)),
+              m_padding(new cv::Mat(len_1d, 1, CV_32F)),
+              m_pt_cloud(new cv::Mat(len_1d, 8, CV_32F)),
+              m_concat_result(new cv::Mat(len_1d, 8, CV_32F)),
+              m_channels_as_one_float(new cv::Mat(len_1d, 1, CV_32F, m_color->data))
     {
-        nh.getParam("/xtion_adapter/topic_rgb_image", imageRGBTopic);
-        nh.getParam("/xtion_adapter/topic_rgb_camera_info", imageRGBCameraInfoTopic);
-        nh.getParam("/xtion_adapter/topic_rgb_cv_bridge_image_mat", cvImageRGBTopic);
-        nh.getParam("/xtion_adapter/topic_depth_image", imageDepthTopic);
-        nh.getParam("/xtion_adapter/topic_depth_camera_info", imageDepthCameraInfoTopic);
-        nh.getParam("/xtion_adapter/topic_depth_cv_bridge_image_mat", cvImageDepthTopic);
-        nh.getParam("/xtion_adapter/topic_pcl_point_cloud", pclPointCloudTopic);
-        nh.getParam("/xtion_adapter/topic_driver_rgb_image", imageRGBDriverTopic);
-        nh.getParam("/xtion_adapter/topic_driver_rgb_camera_info", imageRGBCameraInfoDriverTopic);
-        nh.getParam("/xtion_adapter/topic_driver_depth_image", imageDepthDriverTopic);
-        nh.getParam("/xtion_adapter/topic_driver_depth_camera_info", imageDepthCameraInfoDriverTopic);
-        nh.getParam("/xtion_adapter/topic_driver_depth_camera_info", imageDepthCameraInfoDriverTopic);
-        nh.getParam("/xtion_adapter/topic_driver_depth_camera_info", imageDepthCameraInfoDriverTopic);
-
-        image_transport::TransportHints hints(useCompressed ? "compressed" : "raw");
-        subImageColor.reset(new image_transport::SubscriberFilter(it, imageRGBDriverTopic, queueSize, hints));
-        subImageDepth.reset(new image_transport::SubscriberFilter(it, imageDepthDriverTopic, queueSize, hints));
-        subCameraInfoColor.reset(new message_filters::Subscriber<sensor_msgs::CameraInfo>(nh, imageRGBCameraInfoDriverTopic, queueSize));
-        subCameraInfoDepth.reset(new message_filters::Subscriber<sensor_msgs::CameraInfo>(nh, imageDepthCameraInfoDriverTopic, queueSize));
-        subImageColor.reset(new image_transport::SubscriberFilter(it, imageRGBDriverTopic, queueSize, hints));
-        syncApproximate.reset(new message_filters::Synchronizer<ApproximateSyncPolicy>(ApproximateSyncPolicy(queueSize), *subImageColor, *subImageDepth, *subCameraInfoColor, *subCameraInfoDepth));
-        syncApproximate->registerCallback(boost::bind(&XtionAdapterNodelet::driverNodeCallback, this, _1, _2, _3, _4));
-
         pubImageColor = it.advertise(imageRGBTopic, 10);
         pubImageDepth = it.advertise(imageDepthTopic, 10);
+        //pubImageIr = it.advertise(imageIrTopic, 10);
+        syncApproximate->registerCallback(boost::bind(&XtionAdapterNodelet::driverNodeCallback, this,
+                                                      _1, _2, _3, _4));
         //pubCvImageColor = it.advertise(cvImageRGBTopic, 10);
         //pubCvImageDepth = it.advertise(cvImageDepthTopic, 10);
-        pubCameraInfoColor = nh.advertise<sensor_msgs::CameraInfo>(imageRGBCameraInfoTopic, 10);
-        pubCameraInfoDepth = nh.advertise<sensor_msgs::CameraInfo>(imageDepthCameraInfoTopic, 10);
-        pubPointCloud.reset(new pcl_ros::Publisher< pcl::PointXYZRGB >(nh, pclPointCloudTopic, 10));
+        //pubCameraInfoColor = nh.advertise<sensor_msgs::CameraInfo>(imageRGBCameraInfoTopic, 10);
+        //pubCameraInfoDepth = nh.advertise<sensor_msgs::CameraInfo>(imageDepthCameraInfoTopic, 10);
+        //pubPointCloud.reset(new sensor_msgs::Image());
 
-
-
-        imageScaledDepth.reset(new sensor_msgs::Image());
-        imageScaledDepthCameraInfo.reset(new sensor_msgs::CameraInfo());
+        //imageScaledDepth.reset(new sensor_msgs::Image());
+        //imageScaledDepthCameraInfo.reset(new sensor_msgs::CameraInfo());
     }
 
     XtionAdapterNodelet::~XtionAdapterNodelet() {}
@@ -59,60 +108,80 @@ namespace pclpp_adapters {
                                                     const sensor_msgs::Image::ConstPtr imageDepth,
                                                     const sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
                                                     const sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth) {
-        this->imageRGB = imageColor;
-        this->imageDepth = imageDepth;
-        this->imageRGBCameraInfo = cameraInfoColor;
-        this->imageDepthCameraInfo = cameraInfoDepth;
+       // this->imageRGB = imageColor;
+        //this->imageDepth.reset(&(*imageDepth));
+        //this->imageRGBCameraInfo.reset(&(*cameraInfoColor));
+        //this->imageDepthCameraInfo.reset(&(*cameraInfoDepth));
 
-        NODELET_INFO("CALLBACK %p %p %p %p", imageColor, imageDepth, cameraInfoColor, cameraInfoDepth);
+        //NODELET_INFO("CALLBACK %p %p %p %p", imageColor, imageDepth, cameraInfoColor, cameraInfoDepth);
     }
 
     void XtionAdapterNodelet::driverNodeCallback(sensor_msgs::Image::ConstPtr imageColor,
                                                  sensor_msgs::Image::ConstPtr imageDepth,
                                                  sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
                                                  sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth) {
-        this->imageRGB = imageColor;
-        this->imageDepth = imageDepth;
-        this->imageRGBCameraInfo = cameraInfoColor;
-        this->imageDepthCameraInfo = cameraInfoDepth;
 
-        imageScaledDepthCameraInfo->width = cameraInfoColor->width;
-        imageScaledDepthCameraInfo->height = cameraInfoColor->height;
+        const clock_t begin_time = clock();
+
+        this->imageRGBCameraInfo->header = cameraInfoColor->header;
+        this->imageRGBCameraInfo->height = cameraInfoColor->height;
+        this->imageRGBCameraInfo->width = cameraInfoColor->width;
+        this->imageRGBCameraInfo->distortion_model = cameraInfoColor->distortion_model;
+        this->imageRGBCameraInfo->roi = cameraInfoColor->roi;
+        this->imageRGBCameraInfo->binning_x = cameraInfoColor->binning_x;
+        this->imageRGBCameraInfo->binning_y = cameraInfoColor->binning_y;
+        this->imageRGBCameraInfo->K = cameraInfoColor->K;
+        this->imageRGBCameraInfo->D = cameraInfoColor->D;
+        this->imageRGBCameraInfo->P = cameraInfoColor->P;
+        this->imageRGBCameraInfo->R = cameraInfoColor->R;
+
+        this->imageScaledDepthCameraInfo.header = cameraInfoDepth->header;
+        this->imageScaledDepthCameraInfo.width = cameraInfoColor->width;
+        this->imageScaledDepthCameraInfo.height = cameraInfoColor->height;
         float x_ratio = float(imageColor->width) / float(imageDepth->width);
         float y_ratio = float(imageColor->height) / float(imageDepth->height);
-        imageScaledDepthCameraInfo->K[0] = imageDepthCameraInfo->K[0] * x_ratio;
-        imageScaledDepthCameraInfo->K[2] = imageDepthCameraInfo->K[2] * x_ratio;
-        imageScaledDepthCameraInfo->K[4] = imageDepthCameraInfo->K[4] * y_ratio;
-        imageScaledDepthCameraInfo->K[5] = imageDepthCameraInfo->K[5] * y_ratio;
-        imageScaledDepthCameraInfo->P[0] = imageDepthCameraInfo->P[0] * x_ratio;
-        imageScaledDepthCameraInfo->P[2] = imageDepthCameraInfo->P[2] * x_ratio;
-        imageScaledDepthCameraInfo->P[5] = imageDepthCameraInfo->P[5] * y_ratio;
-        imageScaledDepthCameraInfo->P[6] = imageDepthCameraInfo->P[6] * y_ratio;
+        this->imageScaledDepthCameraInfo.K[0] = cameraInfoDepth->K[0] * x_ratio;
+        this->imageScaledDepthCameraInfo.K[2] = cameraInfoDepth->K[2] * x_ratio;
+        this->imageScaledDepthCameraInfo.K[4] = cameraInfoDepth->K[4] * y_ratio;
+        this->imageScaledDepthCameraInfo.K[5] = cameraInfoDepth->K[5] * y_ratio;
+        this->imageScaledDepthCameraInfo.P[0] = cameraInfoDepth->P[0] * x_ratio;
+        this->imageScaledDepthCameraInfo.P[2] = cameraInfoDepth->P[2] * x_ratio;
+        this->imageScaledDepthCameraInfo.P[5] = cameraInfoDepth->P[5] * y_ratio;
+        this->imageScaledDepthCameraInfo.P[6] = cameraInfoDepth->P[6] * y_ratio;
 
         try {
-            cvImageColor = cv_bridge::toCvCopy(imageRGB, sensor_msgs::image_encodings::BGR8);
-            cvImageScaledDepth = cv_bridge::toCvCopy(
-                    imageDepth, sensor_msgs::image_encodings::TYPE_32FC1);
-            cvImageDepth = cv_bridge::toCvCopy(
-                    imageDepth, sensor_msgs::image_encodings::TYPE_32FC1);
+
+            cvImageColor = cv_bridge::toCvCopy(*imageColor.get(), sensor_msgs::image_encodings::BGRA8);
+            cvImageScaledDepth = cv_bridge::toCvCopy(*imageDepth.get(), sensor_msgs::image_encodings::TYPE_32FC1);
+            cvImageDepth = cv_bridge::toCvCopy(*imageDepth.get(), sensor_msgs::image_encodings::TYPE_32FC1);
         }
-        catch (cv_bridge::Exception& e)
-        {
+        catch (cv_bridge::Exception &e) {
             ROS_ERROR("cv_bridge exception: %s", e.what());
         }
 
-        cv::resize(cvImageDepth->image, cvImageScaledDepth->image, cv::Size(imageRGB->width,
-                                                                            imageRGB->height));
-        pubImageColor.publish(cvImageColor->toImageMsg());
-        pubImageDepth.publish(cvImageScaledDepth->toImageMsg());
-        pubCameraInfoColor.publish(imageRGBCameraInfo);
-        pubCameraInfoDepth.publish(imageScaledDepthCameraInfo);
+        cv::resize(cvImageDepth->image, cvImageScaledDepth->image, cv::Size(imageColor->width,
+                                                                            imageColor->height));
+
+        this->imageRGB = cvImageColor->toImageMsg();
+        this->imageDepth = cvImageScaledDepth->toImageMsg();
+
+        this->imageRGB->header.frame_id = adapterPubFrameId;
+        this->imageDepth->header.frame_id = adapterPubFrameId;
+        this->imageRGBCameraInfo->header.frame_id = adapterPubFrameId;
+        this->imageScaledDepthCameraInfo.header.frame_id = adapterPubFrameId;
+
+        pubImageColor.publish(this->imageRGB);
+        pubImageDepth.publish(this->imageDepth);
+        pubCameraInfoColor.publish(this->imageRGBCameraInfo);
+        pubCameraInfoDepth.publish(this->imageScaledDepthCameraInfo);
 
         //pubCvImageColor.publish(cvImageColor->toImageMsg());
         //pubCvImageDepth.publish(cvImageScaledDepth->toImageMsg());
 
         //ROS_INFO("CALLBACK %p %p %p %p", this->imageRGB, this->imageDepth,
         //             this->imageRGBCameraInfo, this->imageDepthCameraInfo);
+
+        //ROS_INFO("driverNodeCallback: %f Hz", 1 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
 
         if (!preparedMake3D) {
             prepareMake3D();
@@ -170,10 +239,38 @@ namespace pclpp_adapters {
         //cv::Mat big_mat, image_color,
         //        m_depth(big_mat.reshape(0, len_1d)),
         //        m_filler(len_1d, 1, CV_32F);
-        cvImageScaledDepth.get()->image.copyTo(*big_mat);
-        cvImageColor.get()->image.copyTo(*image_color);
+        //cvImageScaledDepth.get()->image.copyTo(*big_mat);
+        //cvImageColor.get()->image.copyTo(*m_color);
 
-        m_depth.reset(new cv::Mat(big_mat->reshape(0, len_1d)));
+        clock_t begin_time = clock();
+
+        m_color.reset(new cv::Mat(1280, 1024, CV_8UC4, cvImageColor->image.data));
+        m_depth.reset(new cv::Mat(len_1d, 1, CV_32F, cvImageScaledDepth->image.data));
+        m_channels_as_one_float.reset(new cv::Mat(len_1d, 1, CV_32F, m_color->data));
+
+        if (!pointCloudAssigned) {
+            m_concat_result.reset(new cv::Mat(len_1d, 8, CV_32F, pclPointCloud->points.data()));
+
+            //pclPointCloud->points.assign((pcl::PointXYZRGB *) m_concat_result->datastart,
+            //                             (pcl::PointXYZRGB *) m_concat_result->dataend);
+            pointCloudAssigned = true;
+        }
+
+        *m_x_mapping = m_x_map->mul(*m_depth);
+        *m_y_mapping = m_y_map->mul(*m_depth);
+        m_x_mapping->col(0).copyTo(m_concat_result->col(0));
+        m_y_mapping->col(0).copyTo(m_concat_result->col(1));
+        m_depth->col(0).copyTo(m_concat_result->col(2));
+        m_channels_as_one_float->col(0).copyTo(m_concat_result->col(4));
+
+        //std::vector<pcl::PointXYZRGB, Eigen::aligned_allocator<pcl::PointXYZRGB>> vec;
+        //m_concat_result->col(0).copyTo(vec);
+//
+//
+        //pclPointCloud->points = *(std::vector<pcl::PointXYZRGB, Eigen::aligned_allocator<pcl::PointXYZRGB> >*) NULL;
+
+
+        ROS_INFO("processPCL1: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
 
         //m_x_map = cv::Mat(len_1d , 1, CV_32F);
         //m_x_mapping = cv::Mat(len_1d, 1, CV_32F);
@@ -181,53 +278,125 @@ namespace pclpp_adapters {
         //m_y_mapping = cv::Mat(len_1d, 1, CV_32F);
 
         //m_filler = cv::Mat(len_1d, 1, CV_32F);
-        m_filler->setTo(1.0f);
+
 
         //m_padding = cv::Mat(len_1d, 1, CV_32F);
-        m_padding->setTo(0.0f);
 
-        float *x_m_ptr = (float*)m_x_map->data;
-        float *y_m_ptr = (float*)m_y_map->data;
-        for (int i = 0; i <= h; i++) {
-            for (int j = 0; j <= w; j++) {
-                *x_m_ptr++ = (float) ((i - imageScaledDepthCameraInfo->K[2] + 0.5) / imageScaledDepthCameraInfo->K[0]);
-                *y_m_ptr++ = (float) ((j - imageScaledDepthCameraInfo->K[5] + 0.5) / imageScaledDepthCameraInfo->K[4]);
-            }
-        }
 
-        std::vector<cv::Mat> matrices = {*m_x_mapping, *m_y_mapping, *m_depth, *m_filler,
-            *m_channels_as_one_float, *m_padding, *m_padding, *m_padding};
+        //ROS_INFO("%p %p %p %p %p %p", &(*m_concat_result), m_concat_result->data, m_concat_result->datastart,
+        //         m_concat_result->dataend, &(*pclPointCloud), &pclPointCloud->points);
+        //ROS_INFO("%p %p %p %p %p", (void *)pclPointCloud->points.data(), (void *)&pclPointCloud->points.back(),
+        //         (void *)&pclPointCloud->points.front(), &(*pclPointCloud->points.begin()),
+        //         &(*pclPointCloud->points.end()));
+
+
+
+
 
         //std::cout << m_pt_cloud->type() << " " << m_pt_cloud->dims << std::endl;
         //std::cout << (void *)m_pt_cloud->data << std::endl;
 
-        *m_x_mapping = m_x_map->mul(*m_depth);
-        *m_y_mapping = m_y_map->mul(*m_depth);
-
-        //cv::Mat _m_pt_cloud();
-        cv::hconcat(matrices, *m_concat_result);
-        //m_pt_cloud.reset(&_m_pt_cloud);
-
-        pcl::PointXYZRGB *pt = (pcl::PointXYZRGB *)m_concat_result->datastart;
-        pclPointCloud->clear();
-        pclPointCloud->points.assign((pcl::PointXYZRGB *)m_concat_result->datastart, (pcl::PointXYZRGB *)m_concat_result->dataend);
-        *m_pt_cloud = cv::Mat(len_1d, 8, CV_32F, (unsigned char *)pclPointCloud->points.data());
+        //begin_time = clock();
+        //*concat_matrices = {*m_x_mapping, *m_y_mapping, *m_depth, *m_filler,
+        //                    *m_channels_as_one_float, *m_padding, *m_padding, *m_padding};
+        //ROS_INFO("processPCL2: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
 
 
-        int count = 0;
-        for (auto it = pclPointCloud->begin(); it != pclPointCloud->end(); ++it) {
-            //printf("%f %f %f %d %d %d %d\n", it->x, it->y, it->z, it->b, it->g, it->r, it->a);
 
-            if (count > 10) {
-                break;
-            }
-            else {
-                count++;
+        //begin_time = clock();
+        //cv::hconcat(*concat_matrices, *m_concat_result);
+        //ROS_INFO("processPCL4: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
+
+        // ajoute les index des pixel qui non pas un depth NaN
+        std::vector<int> indx;
+        int count_a = 0;
+        for (int i = 0; i < m_depth->rows; i++) {
+            if (!std::isnan(m_depth->at<float>(i, 0))) {
+                indx.push_back(i);
+                count_a++;
+                if (count_a > 5) {
+                    break;
+                }
             }
         }
 
-        cv::Mat test_depth(len_1d, 1, CV_32F);
-        test_depth.setTo(2.0f);
+
+
+        //ROS_INFO("%p %p %p %p", &(*m_concat_result), m_concat_result->data, m_concat_result->datastart,
+        //         m_concat_result->dataend);
+        //begin_time = clock();
+        //pcl::PointXYZRGB *pt = (pcl::PointXYZRGB *) m_concat_result->datastart;
+        //pclPointCloud->clear();
+        //ROS_INFO("processPCL5: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
+
+        //begin_time = clock();
+        //pclPointCloud->points.assign((pcl::PointXYZRGB *) m_concat_result->datastart,
+        //                             (pcl::PointXYZRGB *) m_concat_result->dataend);
+        //ROS_INFO("processPCL6: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
+
+        //*m_pt_cloud = cv::Mat(len_1d, 8, CV_32F, (unsigned char *) pclPointCloud->points.data());
+
+        //p_f = (float_t *)pclPointCloud->points.data();
+        //p_c = (uint8_t *)pclPointCloud->points.data();
+
+
+        std::stringstream ss;
+        //ss << std::endl << m;
+        //ROS_INFO("%s", ss.str().c_str());
+
+
+
+
+        //int offset = len_1d / 2;
+        //int count = 0;
+        //for (auto it = pclPointCloud->begin(); it != pclPointCloud->end(); ++it) {
+        //    if (count > offset) {
+        //        ROS_INFO("%f %f %f %d %d %d %d", it->x, it->y, it->z, it->b, it->g, it->r, it->a);
+        //    }
+        //    if (count - offset > 10) {
+        //        break;
+        //    } else {
+        //        count++;
+        //    }
+        //}
+
+        // interpreter m_concat_result comme une mat de bits
+        // et le comparer avec les valeurs de son équivalent  en point cloud
+
+
+        //for (int i = 0; i < m_concat_result->rows; i++) {
+        //    ss.str(std::string());
+        //    ss << m_concat_result->row(i);
+        //    ROS_INFO("{%d} %s", i, ss.str().c_str());
+        //}
+
+
+        //print les pointXYZRGBA qui ne sont pas de depth NaN
+        float x_map, x_mapping, depth;
+        pcl::PointXYZRGB point;
+        //for (auto it = indx.begin(); it != indx.end(); ++it) {
+        //    ss.str(std::string());
+        //    ss << m_concat_result->row(*it);
+        //    depth = m_depth->at<float>(*it);
+        //    x_map = m_x_map->at<float>(*it);
+        //    x_mapping = m_x_mapping->at<float>(*it);
+        //    point = pclPointCloud->points.at((unsigned long)*it);
+        //    ROS_INFO("{%d}\n\t %s\n\t [%f %f %f] [%f %f %f %d %d %d %d]", *it, ss.str().c_str(),
+        //             depth, x_map, x_mapping, point.x, point.y, point.z,
+        //             point.r, point.g, point.b, point.a);
+        //}
+
+        // voir si les pixel de l'image
+        //ss.str(std::string());
+        //for (int i = 0; i < m_color->rows; i++) {
+        //    for (int j = 0; j < m_color->cols; j++) {
+        //        ss << m_color->at<cv::Vec4b>(i, j) << std::endl;
+        //    }
+        //}
+        //ROS_INFO("%s", ss.str().c_str());
+
+        //cv::Mat test_depth(len_1d, 1, CV_32F);
+        //test_depth.setTo(2.0f);
         /*
         std::cout << m_pt_cloud->type() << " " << m_pt_cloud->dims << std::endl;
         std::cout << (void *)m_pt_cloud->data << std::endl;
@@ -265,16 +434,18 @@ namespace pclpp_adapters {
         std::cout << std::endl;
         */
         //big_mat = bigmat_f["bigMat"].mat().rowRange(1, 1081);
+
+
     }
 
     void XtionAdapterNodelet::processPCLMessages() {
-        NODELET_INFO("PROCESSING PCL Messages");
+        //NODELET_INFO("PROCESSING PCL Messages");
 
         //processPCL1();
         processPCL2();
-        pclPointCloud->header.frame_id = "openni_rgb_optical_frame";
-        NODELET_INFO("PUBLISH PCL Messages");
-        pubPointCloud->publish(pclPointCloud);
+        pclPointCloud->header.frame_id = adapterPubFrameId;
+        //NODELET_INFO("PUBLISH PCL Messages");
+        pubPointCloud.publish(pclPointCloud);
     }
 
     void XtionAdapterNodelet::prepareMake3D() {
@@ -302,18 +473,43 @@ namespace pclpp_adapters {
             rowm.at<float>(1, i) = rowmap[i];
         }*/
 
-        pclPointCloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
-        big_mat.reset(new cv::Mat(1280, 1024, CV_32F));
-        image_color.reset(new cv::Mat(1280, 1024, CV_8UC3));
-        m_x_map.reset(new cv::Mat(len_1d , 1, CV_32F));
-        m_x_mapping.reset(new cv::Mat(len_1d, 1, CV_32F));
-        m_y_map.reset(new cv::Mat(len_1d, 1, CV_32F));
-        m_y_mapping.reset(new cv::Mat(len_1d, 1, CV_32F));
-        m_filler.reset(new cv::Mat(len_1d, 1, CV_32F));
-        m_padding.reset(new cv::Mat(len_1d, 1, CV_32F));
-        m_pt_cloud.reset(new cv::Mat(len_1d, 8, CV_32F));
-        m_concat_result.reset(new cv::Mat(len_1d, 8, CV_32F));
-        m_channels_as_one_float.reset(new cv::Mat(len_1d, 1, CV_32F, image_color->data));
+        //pclPointCloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
+        //big_mat.reset(new cv::Mat(1280, 1024, CV_32F));
+        //image_color.reset(new cv::Mat(1280, 1024, CV_8UC3));
+        //m_x_map.reset(new cv::Mat(len_1d, 1, CV_32F));
+        //m_x_mapping.reset(new cv::Mat(len_1d, 1, CV_32F));
+        //m_y_map.reset(new cv::Mat(len_1d, 1, CV_32F));
+        //m_y_mapping.reset(new cv::Mat(len_1d, 1, CV_32F));
+        //m_filler.reset(new cv::Mat(len_1d, 1, CV_32F));
+        //m_padding.reset(new cv::Mat(len_1d, 1, CV_32F));
+        //m_pt_cloud.reset(new cv::Mat(len_1d, 8, CV_32F));
+        //m_concat_result.reset(new cv::Mat(len_1d, 8, CV_32F));
+        //m_channels_as_one_float.reset(new cv::Mat(len_1d, 1, CV_32F, image_color->data));
+
+        float *x_m_ptr = (float *) m_x_map->data;
+        float *y_m_ptr = (float *) m_y_map->data;
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                *x_m_ptr++ = (float) ((i - imageScaledDepthCameraInfo.K[2] + 0.5) / imageScaledDepthCameraInfo.K[0]);
+                *y_m_ptr++ = (float) ((j - imageScaledDepthCameraInfo.K[5] + 0.5) / imageScaledDepthCameraInfo.K[4]);
+            }
+        }
+
+        m_filler->setTo(1.0f);
+        m_padding->setTo(0.0f);
+        m_filler->col(0).copyTo(m_concat_result->col(3));
+        m_padding->col(0).copyTo(m_concat_result->col(5));
+        m_padding->col(0).copyTo(m_concat_result->col(6));
+        m_padding->col(0).copyTo(m_concat_result->col(7));
+
+        pclPointCloud->points.assign((pcl::PointXYZRGB *) m_concat_result->datastart,
+                                     (pcl::PointXYZRGB *) m_concat_result->dataend);
+
+        //ROS_INFO("%p %p %p %p %p %p", &(*m_concat_result), m_concat_result->data, m_concat_result->datastart,
+        //         m_concat_result->dataend, &(*pclPointCloud), &pclPointCloud->points);
+        //ROS_INFO("%p %p %p %p %p", (void *)pclPointCloud->points.data(), (void *)&pclPointCloud->points.back(),
+        //         (void *)&pclPointCloud->points.front(), &(*pclPointCloud->points.begin()),
+        //         &(*pclPointCloud->points.end()));
 
         this->preparedMake3D = true;
     };

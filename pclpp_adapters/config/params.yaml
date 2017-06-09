@@ -1,0 +1,32 @@
+topics:
+  rgb:
+    image: "/rgb/image"
+    camera_info: "/rgb/camera_info"
+  depth:
+    image: "/depth/image"
+    camera_info: "/depth/camera_info"
+  ir:
+    image: "/ir/image"
+    camera_info: "/ir/camera_info"
+  pcl:
+    point_cloud: "/pcl/cloud"
+xtion_head_adapter:
+  frame_id: "head_adapter_frame_id"
+  calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/xtion_head/"
+  driver_namespace: "/xtion_head_driver"
+xtion_arm_adapter:
+  frame_id: "arm_adapter_frame_id"
+  calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/xtion_arm/"
+  driver_namespace: "/xtion_arm_driver"
+xtion_base_adapter:
+  frame_id: "base_adapter_frame_id"
+  calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/xtion_base/"
+  driver_namespace: "/xtion_base_driver"
+kinect2_chest_adapter:
+  frame_id: "chest_adapter_frame_id"
+  calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/kinect2_chest/"
+  driver_namespace: "/kinect2_chest_driver"
+
+
+
+

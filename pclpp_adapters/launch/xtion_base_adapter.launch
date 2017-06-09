@@ -1,0 +1,18 @@
+<launch>
+
+    <arg name="name"                value="xtion_base" />
+    <arg name="remote_debug"        value="true" />
+    <arg name="debug_port"          value="39502" />
+    <arg name="launch_prefix"       default="gdbserver :(arg debug_port)"
+         if="$(arg remote_debug)"/>
+    <arg name="launch_prefix"       value=""
+         unless="$(arg remote_debug)" />
+
+    <node launch-prefix="$(arg launch_prefix)" pkg="pclpp_adapters" type="$(arg name)_adapter_node"
+          name="$(arg name)_adapter" output="screen" args="$(arg name) $(arg remote_debug)">
+        <rosparam file="$(find pclpp_adapters)/config/params.yaml"/>
+    </node>
+
+    <include file="xtion_driver.launch" pass_all_args="true"/>
+
+</launch>

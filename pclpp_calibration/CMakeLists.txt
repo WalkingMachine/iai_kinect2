@@ -97,12 +97,12 @@ find_package(OpenCV 3.2 REQUIRED)
 ##   * add "dynamic_reconfigure" to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
 ##   * uncomment the "generate_dynamic_reconfigure_options" section below
-##     and list every .cfg file to be processed
+##     and list every .config file to be processed
 
-## Generate dynamic reconfigure parameters in the 'cfg' folder
+## Generate dynamic reconfigure parameters in the 'config' folder
 # generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
+#   config/DynReconf1.config
+#   config/DynReconf2.config
 # )
 
 ###################################
@@ -136,11 +136,9 @@ add_library(${PROJECT_NAME}
         include/pclpp_calibration/calibration_definitions.h
         include/pclpp_calibration/calibration_common.h
         include/pclpp_calibration/xtion_calibration_nodelet.h
-        include/pclpp_calibration/kinect1_calibration_nodelet.h
         include/pclpp_calibration/kinect2_calibration_nodelet.h
         src/calibration_common.cpp
         src/xtion_calibration_nodelet.cpp
-        src/kinect1_calibration_nodelet.cpp
         src/kinect2_calibration_nodelet.cpp
         )
 
@@ -166,13 +164,7 @@ add_executable(xtion_calibration_node
         src/calibration_common.cpp
         src/xtion_calibration_nodelet.cpp
         src/xtion_calibration_node.cpp)
-add_executable(kinect1_calibration_node
-        include/pclpp_calibration/calibration_definitions.h
-        include/pclpp_calibration/calibration_common.h
-        include/pclpp_calibration/kinect1_calibration_nodelet.h
-        src/calibration_common.cpp
-        src/kinect1_calibration_nodelet.cpp
-        src/kinect1_calibration_node.cpp)
+
 add_executable(kinect2_calibration_node
         include/pclpp_calibration/calibration_definitions.h
         include/pclpp_calibration/calibration_common.h
@@ -199,10 +191,6 @@ add_dependencies(xtion_calibration_node
         ${${PROJECT_NAME}_EXPORTED_TARGETS}
         ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(kinect1_calibration_node
-        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-        ${catkin_EXPORTED_TARGETS})
-
 add_dependencies(kinect2_calibration_node
         ${${PROJECT_NAME}_EXPORTED_TARGETS}
         ${catkin_EXPORTED_TARGETS})
@@ -213,10 +201,6 @@ add_dependencies(kinect2_calibration_node
 # )
 
 target_link_libraries(xtion_calibration_node
-        ${catkin_LIBRARIES}
-        )
-
-target_link_libraries(kinect1_calibration_node
         ${catkin_LIBRARIES}
         )
 

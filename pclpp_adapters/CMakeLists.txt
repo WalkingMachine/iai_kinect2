@@ -95,12 +95,12 @@ endif()
 ##   * add "dynamic_reconfigure" to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
 ##   * uncomment the "generate_dynamic_reconfigure_options" section below
-##     and list every .cfg file to be processed
+##     and list every .config file to be processed
 
-## Generate dynamic reconfigure parameters in the 'cfg' folder
+## Generate dynamic reconfigure parameters in the 'config' folder
 # generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
+#   config/DynReconf1.config
+#   config/DynReconf2.config
 # )
 
 ###################################
@@ -143,10 +143,8 @@ link_directories(${PC_OPENNI2_LIBRARY_DIRS})
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
         include/pclpp_adapters/xtion_adapter_nodelet.h
-        include/pclpp_adapters/kinect1_adapter_nodelet.h
         include/pclpp_adapters/kinect2_adapter_nodelet.h
         src/xtion_adapter_nodelet.cpp
-        src/kinect1_adapter_nodelet.cpp
         src/kinect2_adapter_nodelet.cpp
         )
 
@@ -155,15 +153,12 @@ add_library(${PROJECT_NAME}
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(xtion_adapter_node
         include/pclpp_adapters/xtion_adapter_nodelet.h
-        src/xtion_adapter_nodelet.cpp
+        #src/xtion_adapter_nodelet.cpp
         src/xtion_adapter_node.cpp)
-add_executable(kinect1_adapter_node
-        include/pclpp_adapters/kinect1_adapter_nodelet.h
-        src/kinect1_adapter_nodelet.cpp
-        src/kinect1_adapter_node.cpp)
+
 add_executable(kinect2_adapter_node
         include/pclpp_adapters/kinect2_adapter_nodelet.h
-        src/kinect2_adapter_nodelet.cpp
+        #src/kinect2_adapter_nodelet.cpp
         src/kinect2_adapter_node.cpp)
 #rosbuild_add_executable(xtion_adapter_node include/pclpp_adapters/xtion_adapter_nodelet.h src/xtion_adapter_nodelet.cpp)
 #rosbuild_add_executable(kinect1_adapter_node include/pclpp_adapters/kinect1_adapter_nodelet.h src/kinect1_adapter_nodelet.cpp)
@@ -181,15 +176,15 @@ add_dependencies(xtion_adapter_node
         ${${PROJECT_NAME}_EXPORTED_TARGETS}
         ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(kinect1_adapter_node
-        ${${PROJECT_NAME}_EXPORTED_TARGETS}
-        ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(kinect2_adapter_node
         ${${PROJECT_NAME}_EXPORTED_TARGETS}
         ${catkin_EXPORTED_TARGETS})
 
-
+##get_cmake_property(_variableNames VARIABLES)
+##foreach (_variableName ${_variableNames})
+## message(STATUS "${_variableName}=${${_variableName}}")
+##endforeach()
 
 
 ## Rename C++ executable without prefix
@@ -209,25 +204,21 @@ add_dependencies(kinect2_adapter_node
 # message(STATUS "${_variableName}=${${_variableName}}")
 #endforeach()
 
-#target_link_libraries(${PROJECT_NAME}
-#        ${catkin_LIBRARIES}
-#        ${PC_OPENNI2_LIBRARIES}
-#        )
+target_link_libraries(${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+        ${PC_OPENNI2_LIBRARIES}
+        )
+
 
 target_link_libraries(xtion_adapter_node
         ${catkin_LIBRARIES}
         ${PC_OPENNI2_LIBRARIES}
-        )
-
-target_link_libraries(kinect1_adapter_node
-        ${catkin_LIBRARIES}
-        ${PC_OPENNI2_LIBRARIES}
-        )
+        ${PROJECT_NAME})
 
 target_link_libraries(kinect2_adapter_node
         ${catkin_LIBRARIES}
         ${PC_OPENNI2_LIBRARIES}
-        )
+        ${PROJECT_NAME})
 
 
 #############

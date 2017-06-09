@@ -4,7 +4,7 @@
 
 namespace pclpp_adapters {
 
-    Kinect2AdapterNodelet::Kinect2AdapterNodelet() {}
+    Kinect2AdapterNodelet::Kinect2AdapterNodelet() {};
 
     Kinect2AdapterNodelet::~Kinect2AdapterNodelet() {}
 

@@ -1,0 +1,19 @@
+<launch>
+
+    <arg name="name"                value="xtion_head" />
+    <arg name="viewer_debug"        value="true" />
+    <arg name="debug_port"          value="39700" />
+    <arg name="launch_prefix"       default="gdbserver :$(arg debug_port)"
+         if="$(arg viewer_debug)"/>
+    <arg name="launch_prefix"       value=""
+         unless="$(arg viewer_debug)" />
+
+    <rosparam ns="/pcl_preprocessing" file="$(find pclpp_viewer)/config/params.yaml"/>
+    <node launch-prefix="$(arg launch_prefix)" pkg="pclpp_viewer" type="vtk_viewer_node"
+          name="$(arg name)_viewer" output="screen">
+
+    </node>
+
+    <include file="$(find pclpp_adapters)/launch/$(arg name)_adapter.launch" pass_all_args="false"/>
+
+</launch>

@@ -32,10 +32,16 @@
     <arg name="xtion_adapter_launch_prefix"    if="$(arg remote_debug)"     default="gdbserver :39500" />
     <arg name="xtion_adapter_launch_prefix"    unless="$(arg remote_debug)" default="" />
 
+
     <arg name="base_name"         default="pclpp_adapters"/>
     <arg name="nodelet_manager"   default="$(arg base_name)"/>
 
+
+
+
     <node  pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
+
+
 
     <node  launch-prefix="$(arg xtion_adapter_launch_prefix)" pkg="nodelet" type="nodelet" name="xtion_adapter" args="load pclpp_adapters/XtionAdapterNodelet nodelet_manager" output="screen">
         <rosparam file="$(find pclpp_adapters)/xtion_adapter_default.yaml"/>

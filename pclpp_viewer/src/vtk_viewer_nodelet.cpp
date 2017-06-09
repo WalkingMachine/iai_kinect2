@@ -3,13 +3,26 @@
 
 namespace pclpp_viewer {
 
-    VTKViewerNodelet::VTKViewerNodelet(const bool useExact, const bool useCompressed) :
-    useExact(useExact), useCompressed(useCompressed), topicColor(),
-    updateImage(false), updateCloud(false), save(false), running(false), frame(0), queueSize(5),
-    nh("~"), spinner(0), it(nh), mode(VTKViewerNodelet::CLOUD) {
-        nh.getParam("/pclpp_viewer/topic_to_listen_color", topicColor);
-        nh.getParam("/pclpp_viewer/topic_to_listen_color", topicDepth);
-
+    VTKViewerNodelet::VTKViewerNodelet(std::string &viewer_name, boost::shared_ptr<ros::NodeHandle> &n_h,
+                                       image_transport::ImageTransport &i_t, const bool useExact, const bool useCompressed)
+            : useExact(useExact), useCompressed(useCompressed), updateImage(true)
+            , updateCloud(true),
+              save(false), running(false), frame(0), queueSize(10),
+              viewerName((&viewer_name != NULL) ? "/" + viewer_name : std::string("unkown_viewer")),
+              adapterName(ros::param::param<std::string>("/pcl_preprocessing" + viewerName + "/adapter_namespace",
+                                                         std::string(""))),
+              nh((&n_h != NULL) ? n_h : boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(viewer_name))),
+              it((&i_t != NULL) ? i_t : image_transport::ImageTransport(*nh)),
+              spinner(0), mode(VTKViewerNodelet::CLOUD),
+              imageColorTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/rgb/image", std::string(""))),
+              imageDepthTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/depth/image", std::string(""))),
+              imageColorCameraInfoTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/rgb/camera_info", std::string(""))),
+              imageDepthCameraInfoTopic(adapterName + ros::param::param<std::string>(
+                      "/pcl_preprocessing/topics/depth/camera_info", std::string("")))
+    {
         cameraMatrixColor = cv::Mat::zeros(3, 3, CV_64F);
         cameraMatrixDepth = cv::Mat::zeros(3, 3, CV_64F);
         params.push_back((int)cv::IMWRITE_JPEG_QUALITY);
@@ -101,8 +114,10 @@ namespace pclpp_viewer {
             }
         }
 
-        ROS_INFO("topic color: %s", topicColor.c_str());
-        ROS_INFO("topic depth: %s", topicDepth.c_str());
+        ROS_INFO("topic color: %s", imageColorTopic.c_str());
+        ROS_INFO("topic color camera info: %s", imageColorCameraInfoTopic.c_str());
+        ROS_INFO("topic depth: %s", imageDepthTopic.c_str());
+        ROS_INFO("topic depth camera info: %s", imageDepthCameraInfoTopic.c_str());
 
         ROS_INFO("starting receiver...");
         run(mode);
@@ -123,24 +138,24 @@ namespace pclpp_viewer {
         this->mode = mode;
         running = true;
 
-        std::string topicCameraInfoColor = topicColor.substr(0, topicColor.rfind('/')) + "/camera_info";
-        std::string topicCameraInfoDepth = topicDepth.substr(0, topicDepth.rfind('/')) + "/camera_info";
 
         image_transport::TransportHints hints(useCompressed ? "compressed" : "raw");
-        subImageColor = new image_transport::SubscriberFilter(it, topicColor, queueSize, hints);
-        subImageDepth = new image_transport::SubscriberFilter(it, topicDepth, queueSize, hints);
-        subCameraInfoColor = new message_filters::Subscriber<sensor_msgs::CameraInfo>(nh, topicCameraInfoColor, queueSize);
-        subCameraInfoDepth = new message_filters::Subscriber<sensor_msgs::CameraInfo>(nh, topicCameraInfoDepth, queueSize);
+        subImageColor = new image_transport::SubscriberFilter(it, imageColorTopic, queueSize, hints);
+        subImageDepth = new image_transport::SubscriberFilter(it, imageDepthTopic, queueSize, hints);
+        subCameraInfoColor = new message_filters::Subscriber<sensor_msgs::CameraInfo>(
+                *nh, imageColorCameraInfoTopic, queueSize);
+        subCameraInfoDepth = new message_filters::Subscriber<sensor_msgs::CameraInfo>(
+                *nh, imageDepthCameraInfoTopic, queueSize);
 
         if(useExact)
         {
             syncExact = new message_filters::Synchronizer<ExactSyncPolicy>(ExactSyncPolicy(queueSize), *subImageColor, *subImageDepth, *subCameraInfoColor, *subCameraInfoDepth);
-            syncExact->registerCallback(boost::bind(&VTKViewerNodelet::callback, this, _1, _2, _3, _4));
+            syncExact->registerCallback(boost::bind(&VTKViewerNodelet::adapterNodeCallback, this, _1, _2, _3, _4));
         }
         else
         {
             syncApproximate = new message_filters::Synchronizer<ApproximateSyncPolicy>(ApproximateSyncPolicy(queueSize), *subImageColor, *subImageDepth, *subCameraInfoColor, *subCameraInfoDepth);
-            syncApproximate->registerCallback(boost::bind(&VTKViewerNodelet::callback, this, _1, _2, _3, _4));
+            syncApproximate->registerCallback(boost::bind(&VTKViewerNodelet::adapterNodeCallback, this, _1, _2, _3, _4));
         }
 
         spinner.start();
@@ -200,10 +215,39 @@ namespace pclpp_viewer {
         }
     }
 
-    void VTKViewerNodelet::callback(const sensor_msgs::Image::ConstPtr imageColor,
-                                    const sensor_msgs::Image::ConstPtr imageDepth,
-                                    const sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
-                                    const sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth) {
+    void VTKViewerNodelet::adapterNodeletCallback(const sensor_msgs::Image::ConstPtr imageColor,
+                                                  const sensor_msgs::Image::ConstPtr imageDepth,
+                                                  const sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
+                                                  const sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth) {
+
+
+        cv::Mat color, depth;
+
+        readCameraInfo(cameraInfoColor, cameraMatrixColor);
+        readCameraInfo(cameraInfoDepth, cameraMatrixDepth);
+        readImage(imageColor, color);
+        readImage(imageDepth, depth);
+
+        // IR image input
+        if(color.type() == CV_16U)
+        {
+            cv::Mat tmp;
+            color.convertTo(tmp, CV_8U, 0.02);
+            cv::cvtColor(tmp, color, CV_GRAY2BGR);
+        }
+
+        lock.lock();
+        this->color = color;
+        this->depth = depth;
+        updateImage = true;
+        updateCloud = true;
+        lock.unlock();
+    }
+
+    void VTKViewerNodelet::adapterNodeCallback(sensor_msgs::Image::ConstPtr imageColor,
+                                               sensor_msgs::Image::ConstPtr imageDepth,
+                                               sensor_msgs::CameraInfo::ConstPtr cameraInfoColor,
+                                               sensor_msgs::CameraInfo::ConstPtr cameraInfoDepth) {
         cv::Mat color, depth;
 
         readCameraInfo(cameraInfoColor, cameraMatrixColor);
@@ -311,6 +355,14 @@ namespace pclpp_viewer {
         updateCloud = false;
         lock.unlock();
 
+        if (lookupX.cols != depth.cols || lookupY.cols != depth.rows
+            || cloud->height != (uint32_t)color.rows || cloud->width != color.cols) {
+            cloud->height = (uint32_t) color.rows;
+            cloud->width = (uint32_t) color.cols;
+            cloud->points.resize(cloud->height * cloud->width);
+            createLookup((size_t)depth.cols, (size_t)depth.rows);
+        }
+        
         createCloud(depth, color, cloud);
 
         visualizer->addPointCloud(cloud, cloudName);
@@ -318,7 +370,8 @@ namespace pclpp_viewer {
         visualizer->initCameraParameters();
         visualizer->setBackgroundColor(0, 0, 0);
         visualizer->setPosition(mode == BOTH ? color.cols : 0, 0);
-        visualizer->setSize(color.cols, color.rows);
+        visualizer->setSize((color.cols > 250) ? color.cols : 250,
+                            (color.rows > 250) ? color.rows : 250);
         visualizer->setShowFPS(true);
         visualizer->setCameraPosition(0, 0, 0, 0, -1, 0);
         visualizer->registerKeyboardCallback(&VTKViewerNodelet::keyboardEvent, *this);
@@ -332,6 +385,14 @@ namespace pclpp_viewer {
                 depth = this->depth;
                 updateCloud = false;
                 lock.unlock();
+
+                if (lookupX.cols != depth.cols || lookupY.cols != depth.rows
+                    || cloud->height != (uint32_t)color.rows || cloud->width != color.cols) {
+                    cloud->height = (uint32_t) color.rows;
+                    cloud->width = (uint32_t) color.cols;
+                    cloud->points.resize(cloud->height * cloud->width);
+                    createLookup((size_t)depth.cols, (size_t)depth.rows);
+                }
 
                 createCloud(depth, color, cloud);
 
@@ -425,6 +486,11 @@ namespace pclpp_viewer {
                                        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud) const {
         const float badPoint = std::numeric_limits<float>::quiet_NaN();
 
+        double maxDepth, minDepth;
+        cv::minMaxLoc(depth, &minDepth, &maxDepth);
+
+        assert(true);
+
 #pragma omp parallel for
         for(int r = 0; r < depth.rows; ++r)
         {
@@ -436,21 +502,23 @@ namespace pclpp_viewer {
 
             for(size_t c = 0; c < (size_t)depth.cols; ++c, ++itP, ++itD, ++itC, ++itX)
             {
-                register const float depthValue = *itD / 1000.0f;
-                // Check for invalid measurements
-                if(*itD == 0)
-                {
-                    // not valid
-                    itP->x = itP->y = itP->z = badPoint;
-                    itP->rgba = 0;
-                    continue;
-                }
-                itP->z = depthValue;
-                itP->x = *itX * depthValue;
-                itP->y = y * depthValue;
-                itP->b = itC->val[0];
+                //register const float depthValue = *itD / 1000.0f;
+                //// Check for invalid measurements
+                //if(*itD == 0)
+                //{
+                //    // not valid
+                //    itP->x = itP->y = itP->z = badPoint;
+                //    itP->rgba = 0;
+                //    continue;
+                //}
+                itP->z = *itD;
+                //itP->x = *itX * depthValue;
+                itP->x = c;
+                //itP->y = y * depthValue;
+                itP->y = r;
+                itP->r = itC->val[0];
                 itP->g = itC->val[1];
-                itP->r = itC->val[2];
+                itP->b = itC->val[2];
                 itP->a = 255;
             }
         }
@@ -500,6 +568,4 @@ namespace pclpp_viewer {
             *it = (c - cx) * fx;
         }
     }
-
-
 }

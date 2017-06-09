@@ -1,0 +1,145 @@
+<launch>
+
+    <arg name="remote_debug" />
+    <arg name="debug_port" />
+    <arg name="name" />
+    <arg name="launch_prefix" />
+
+    <node pkg="openni2_camera" type="openni2_camera_node" name="$(arg name)_driver" output="screen">
+
+        <remap from="/depth/camera_info"
+               to="/$(arg name)_driver/depth/camera_info"/>
+
+        <remap from="/depth/image"
+               to="/$(arg name)_driver/depth/image" />
+
+        <remap from="/depth/image/compressed"
+               to="/$(arg name)driver/depth/image/compressed" />
+
+        <remap from="/depth/image/compressed/parameter_descriptions"
+               to="/$(arg name)_driver/depth/image/compressed/parameter_descriptions" />
+
+        <remap from="/depth/image/compressed/parameter_updates"
+               to="/$(arg name)_driver/depth/image/compressed/parameter_updates" />
+
+        <remap from="/depth/image/compressedDepth"
+               to="/$(arg name)_driver/depth/image/compressedDepth" />
+
+        <remap from="/depth/image/compressedDepth/parameter_descriptions"
+               to="/$(arg name)_driver/depth/image/compressedDepth/parameter_descriptions" />
+
+        <remap from="/depth/image/compressedDepth/parameter_updates"
+               to="/$(arg name)_driver/depth/image/compressedDepth/parameter_updates" />
+
+        <remap from="/depth/image/theora"
+               to="/$(arg name)_driver/depth/image/theora" />
+
+        <remap from="/depth/image/theora/parameter_descriptions"
+               to="/$(arg name)_driver/depth/image/theora/parameter_descriptions" />
+
+        <remap from="/depth/image/theora/parameter_updates"
+               to="/$(arg name)_driver/depth/image/theora/parameter_updates" />
+
+        <remap from="/depth/image_raw"
+               to="/$(arg name)_driver/depth/image_raw"/>
+
+        <remap from="/depth/image_raw/compressed"
+               to="/$(arg name)_driver/depth/image_raw/compressed"/>
+
+        <remap from="/depth/image_raw/compressed/parameter_descriptions"
+               to="/$(arg name)_driver/depth/image_raw/compressed/parameter_descriptions"/>
+
+        <remap from="/depth/image_raw/compressed/parameter_updates"
+               to="/$(arg name)_driver/depth/image_raw/compressed/parameter_updates"/>
+
+        <remap from="/depth/image_raw/compressedDepth"
+               to="/$(arg name)_driver/depth/image_raw/compressedDepth"/>
+
+        <remap from="/depth/image_raw/compressedDepth/parameter_descriptions"
+               to="/$(arg name)_driver/depth/image_raw/compressedDepth/parameter_descriptions"/>
+
+        <remap from="/depth/image_raw/compressedDepth/parameter_updates"
+               to="/$(arg name)_driver/depth/image_raw/compressedDepth/parameter_updates"/>
+
+        <remap from="/depth/image_raw/theora"
+               to="/$(arg name)_driver/depth/image_raw/theora"/>
+
+        <remap from="/depth/image_raw/theora/parameter_descriptions"
+               to="/$(arg name)_driver/depth/image_raw/theora/parameter_descriptions"/>
+
+        <remap from="/depth/image_raw/theora/parameter_updates"
+               to="/$(arg name)_driver/depth/image_raw/theora/parameter_updates"/>
+
+        <remap from="/ir/camera_info"
+               to="/$(arg name)_driver/ir/camera_info"/>
+
+        <remap from="/ir/image"
+               to="/$(arg name)_driver/ir/image" />
+
+        <remap from="/ir/image/compressed"
+               to="/$(arg name)_driver/ir/image/compressed" />
+
+        <remap from="/ir/image/compressed/parameter_descriptions"
+               to="/$(arg name)_driver/ir/image/compressed/parameter_descriptions" />
+
+        <remap from="/ir/image/compressed/parameter_updates"
+               to="/$(arg name)_driver/ir/image/compressed/parameter_updates" />
+
+        <remap from="/ir/image/compressedDepth"
+               to="/$(arg name)_driver/ir/image/compressedDepth" />
+
+        <remap from="/ir/image/compressedDepth/parameter_descriptions"
+               to="/$(arg name)_driver/ir/image/compressedDepth/parameter_descriptions" />
+
+        <remap from="/ir/image/compressedDepth/parameter_updates"
+               to="/$(arg name)_driver/ir/image/compressedDepth/parameter_updates" />
+
+        <remap from="/ir/image/theora"
+               to="/$(arg name)_driver/ir/image/theora" />
+
+        <remap from="/ir/image/theora/parameter_descriptions"
+               to="/$(arg name)_driver/ir/image/theora/parameter_descriptions" />
+
+        <remap from="/ir/image/theora/parameter_updates"
+               to="/$(arg name)_driver/ir/image/theora/parameter_updates" />
+
+        <remap from="/rgb/camera_info"
+               to="/$(arg name)_driver/rgb/camera_info"/>
+
+        <remap from="/rgb/image"
+               to="/$(arg name)_driver/rgb/image" />
+
+        <remap from="/rgb/image/compressed"
+               to="/$(arg name)_driver/rgb/image/compressed" />
+
+        <remap from="/rgb/image/compressed/parameter_descriptions"
+               to="/$(arg name)_driver/rgb/image/compressed/parameter_descriptions" />
+
+        <remap from="/rgb/image/compressed/parameter_updates"
+               to="/$(arg name)_driver/rgb/image/compressed/parameter_updates" />
+
+        <remap from="/rgb/image/compressedDepth"
+               to="/$(arg name)_driver/rgb/image/compressedDepth" />
+
+        <remap from="/rgb/image/compressedDepth/parameter_descriptions"
+               to="/$(arg name)_driver/rgb/image/compressedDepth/parameter_descriptions" />
+
+        <remap from="/rgb/image/compressedDepth/parameter_updates"
+               to="/$(arg name)_driver/rgb/image/compressedDepth/parameter_updates" />
+
+        <remap from="/rgb/image/theora"
+               to="/$(arg name)_driver/rgb/image/theora" />
+
+        <remap from="/rgb/image/theora/parameter_descriptions"
+               to="/$(arg name)_driver/rgb/image/theora/parameter_descriptions" />
+
+        <remap from="/rgb/image/theora/parameter_updates"
+               to="/$(arg name)_driver/rgb/image/theora/parameter_updates" />
+
+        <rosparam param="/$(arg name)_driver/ir_mode">5</rosparam>
+        <rosparam param="/$(arg name)_driver/depth_mode">5</rosparam>
+        <rosparam param="/$(arg name)_driver/color_mode">1</rosparam>
+        <rosparam param="/$(arg name)_driver/color_depth_synchronization">true</rosparam>
+    </node>
+
+</launch>

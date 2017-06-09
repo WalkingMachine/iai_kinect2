@@ -1,0 +1,9 @@
+
+xtion_head_viewer:
+  adapter_namespace: "/xtion_head_adapter"
+xtion_arm_viewer:
+  adapter_namespace: "/xtion_arm_adapter"
+xtion_base_viewer:
+  adapter_namespace: "/xtion_base_adapter"
+kinect2_chest_viewer:
+  adapter_namespace: "/kinect2_chest_driver"

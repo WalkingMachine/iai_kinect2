@@ -1,4 +1,4 @@
-calibration_path: "cfg/"
+calibration_path: "config/"
 calibration_symmetric: true
 calibration_circle_board: false
 calibration_board_dims: [7, 6]
