@@ -133,7 +133,6 @@ catkin_package(
 INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}
-        include/pclpp_calibration/calibration_definitions.h
         include/pclpp_calibration/calibration_common.h
         include/pclpp_calibration/xtion_calibration_nodelet.h
         include/pclpp_calibration/kinect2_calibration_nodelet.h
@@ -158,7 +157,6 @@ add_library(${PROJECT_NAME}
 # add_executable(${PROJECT_NAME}_node src/pclpp_calibration_node.cpp)
 
 add_executable(xtion_calibration_node
-        include/pclpp_calibration/calibration_definitions.h
         include/pclpp_calibration/calibration_common.h
         include/pclpp_calibration/xtion_calibration_nodelet.h
         src/calibration_common.cpp
@@ -166,7 +164,6 @@ add_executable(xtion_calibration_node
         src/xtion_calibration_node.cpp)
 
 add_executable(kinect2_calibration_node
-        include/pclpp_calibration/calibration_definitions.h
         include/pclpp_calibration/calibration_common.h
         include/pclpp_calibration/kinect2_calibration_nodelet.h
         src/calibration_common.cpp

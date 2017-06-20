@@ -11,8 +11,9 @@ namespace pclpp_calibration {
     class CameraCalibration {
     public:
 
-        CameraCalibration(const std::string &path, const Source mode, const bool circleBoard,
-                          const cv::Size &boardDims, const float boardSize, const bool rational);
+        CameraCalibration(const std::string calibrationName, const std::string &path, const Source mode,
+                          const bool circleBoard, const cv::Size &boardDims, const float boardSize,
+                          const bool rational, const cv::Size &sizeIr, const cv::Size &sizeColor);
         ~CameraCalibration();
         bool restore();
         void calibrate();
@@ -55,11 +56,19 @@ namespace pclpp_calibration {
 
         std::vector<cv::Mat> rvecsColor, tvecsColor;
         std::vector<cv::Mat> rvecsIr, tvecsIr;
+
+        const std::string calibPoseFile, calibColorFile, calibIrFile;
+        const std::string calibCameraMatrixName, calibDistortionName, calibRotationName, calibProjectionName,
+                calibTranslationName, calibEssentialName, calibFundamentalName;
+        const std::string calibFileColor, calibFileIrGrey, calibSyncName, calibPointsColorFile, calibPointsIrFile;
+
     };
 
     class DepthCalibration {
     public:
-        DepthCalibration(const std::string &path, const cv::Size &boardDims, const float boardSize);
+        DepthCalibration(const std::string calibrationName,
+                         const std::string &path, const cv::Size &boardDims, const float boardSize,
+                         const cv::Size &sizeIr);
         ~DepthCalibration();
         bool restore();
         void calibrate();
@@ -91,6 +100,10 @@ namespace pclpp_calibration {
         double fx, fy, cx, cy;
 
         std::ofstream plot;
+
+        const std::string calibIrFile, calibDepthFile;
+        const std::string calibCameraMatrixName, calibDistortionName, calibDepthShiftName;
+        const std::string calibFileIrGrey, calibFileDepth, calibPointsIrFile;
     };
 
 }

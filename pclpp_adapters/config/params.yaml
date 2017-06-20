@@ -14,19 +14,82 @@ xtion_head_adapter:
   frame_id: "head_adapter_frame_id"
   calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/xtion_head/"
   driver_namespace: "/xtion_head_driver"
+  use_static_tf: true
+  use_tf_tuning: true
+  static_tf:
+    x: 0.0
+    y: 0.0
+    z: 1.60
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  tf_tuning:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 1.5708
+    pitch: 1.5708
+    yaw: 3.14159
 xtion_arm_adapter:
   frame_id: "arm_adapter_frame_id"
   calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/xtion_arm/"
-  driver_namespace: "/xtion_arm_driver"
+  driver_namespace: "/xtion_head_driver"
+  use_static_tf: true
+  use_tf_tuning: true
+  static_tf:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  tf_tuning:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
 xtion_base_adapter:
   frame_id: "base_adapter_frame_id"
   calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/xtion_base/"
   driver_namespace: "/xtion_base_driver"
+  use_static_tf: true
+  use_tf_tuning: true
+  static_tf:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  tf_tuning:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
 kinect2_chest_adapter:
   frame_id: "chest_adapter_frame_id"
   calibration_path: "wm_pcl_preprocessing/pclpp_calibration/config/calibration/kinect2_chest/"
   driver_namespace: "/kinect2_chest_driver"
-
+  use_static_tf: true
+  use_tf_tuning: true
+  static_tf:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+  tf_tuning:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
 
 
 

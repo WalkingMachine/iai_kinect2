@@ -13,6 +13,5 @@
           name="$(arg name)_adapter" output="screen">
     </node>
 
-    <include file="$(find pclpp_adapters)/launch/xtion_driver.launch" pass_all_args="true"/>
 
 </launch>

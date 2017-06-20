@@ -17,11 +17,11 @@ namespace pclpp_adapters {
               hints(useCompressed ? "compressed" : "raw"),
               adapterName("/" + std::string(adapter_name)),
               driverName(ros::param::param(
-                      "/pcl_preprocessing" + adapterName + "/driver_namespace", std::string(std::string("")))),
+                      "/pcl_preprocessing" + adapterName + "/driver_namespace", std::string(""))),
               adapterPubFrameId(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + adapterName + "/frame_id",std::string(std::string("")))),
+                      "/pcl_preprocessing" + adapterName + "/frame_id", std::string(""))),
               calibrationPath(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + adapterName + "/calibration_path", std::string(std::string("")))),
+                      "/pcl_preprocessing" + adapterName + "/calibration_path", std::string(""))),
               imageRGBTopic(adapterName + ros::param::param<std::string>(
                       "/pcl_preprocessing/topics/rgb/image", std::string(""))),
               imageRGBCameraInfoTopic(adapterName + ros::param::param<std::string>(
@@ -48,6 +48,34 @@ namespace pclpp_adapters {
                       "/pcl_preprocessing/topics/ir/image", std::string(""))),
               imageIrCameraInfoDriverTopic(driverName + ros::param::param<std::string>(
                       "/pcl_preprocessing/topics/ir/camera_info", std::string(""))),
+              useStaticTf(ros::param::param<bool>(
+                      "/pcl_preprocessing" + adapterName + "/use_static_tf", false)),
+              staticTfX(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/static_tf/x", 0.0)),
+              staticTfY(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/static_tf/y", 0.0)),
+              staticTfZ(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/static_tf/z", 0.0)),
+              staticTfRoll(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/static_tf/roll", 0.0)),
+              staticTfPitch(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/static_tf/pitch", 0.0)),
+              staticTfYaw(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/static_tf/yaw", 0.0)),
+              useTfTuning(ros::param::param<bool>(
+                      "/pcl_preprocessing" + adapterName + "/use_tf_tuning", false)),
+              tfTuningX(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/tf_tuning/x", 0.0)),
+              tfTuningY(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/tf_tuning/y", 0.0)),
+              tfTuningZ(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/tf_tuning/z", 0.0)),
+              tfTuningRoll(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/tf_tuning/roll", 0.0)),
+              tfTuningPitch(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/tf_tuning/pitch", 0.0)),
+              tfTuningYaw(ros::param::param<double>(
+                      "/pcl_preprocessing" + adapterName + "/tf_tuning/yaw", 0.0)),
               pubCameraInfoColor(nh->advertise<sensor_msgs::CameraInfo>(imageRGBCameraInfoTopic, 10)),
               pubCameraInfoDepth(nh->advertise<sensor_msgs::CameraInfo>(imageDepthCameraInfoTopic, 10)),
               pubCameraInfoIr(nh->advertise<sensor_msgs::CameraInfo>(imageIrCameraInfoTopic, 10)),
@@ -80,8 +108,11 @@ namespace pclpp_adapters {
               m_filler(new cv::Mat(len_1d, 1, CV_32F)),
               m_padding(new cv::Mat(len_1d, 1, CV_32F)),
               m_pt_cloud(new cv::Mat(len_1d, 8, CV_32F)),
-              m_concat_result(new cv::Mat(len_1d, 8, CV_32F)),
-              m_channels_as_one_float(new cv::Mat(len_1d, 1, CV_32F, m_color->data))
+              m_pointcloud_points(new cv::Mat(len_1d, 8, CV_32F)),
+              m_channels_as_one_float(new cv::Mat(len_1d, 1, CV_32F, m_color->data)),
+              tfBroadcaster(new tf2_ros::TransformBroadcaster()),
+              tfStamped(new geometry_msgs::TransformStamped()),
+              tfQuaternion(new tf2::Quaternion())
     {
         pubImageColor = it.advertise(imageRGBTopic, 10);
         pubImageDepth = it.advertise(imageDepthTopic, 10);
@@ -187,6 +218,25 @@ namespace pclpp_adapters {
             prepareMake3D();
         }
         processPCLMessages();
+        publishTf();
+    }
+
+    void XtionAdapterNodelet::publishTf() {
+
+        tfStamped->header.frame_id = "/world";
+        tfStamped->child_frame_id = adapterPubFrameId;
+        tfStamped->transform.translation.x = staticTfX + tfTuningX;
+        tfStamped->transform.translation.y = staticTfY + tfTuningY;
+        tfStamped->transform.translation.z = staticTfZ + tfTuningZ;
+
+        tfQuaternion->setRPY(staticTfRoll + tfTuningRoll, staticTfPitch + tfTuningPitch, staticTfYaw + tfTuningYaw);
+        tfStamped->transform.rotation.x = tfQuaternion->x();
+        tfStamped->transform.rotation.y = tfQuaternion->y();
+        tfStamped->transform.rotation.z = tfQuaternion->z();
+        tfStamped->transform.rotation.w = tfQuaternion->w();
+
+        tfStamped->header.stamp = ros::Time::now();
+        tfBroadcaster->sendTransform(*tfStamped);
     }
 
     void XtionAdapterNodelet::processPCL1() {
@@ -242,35 +292,32 @@ namespace pclpp_adapters {
         //cvImageScaledDepth.get()->image.copyTo(*big_mat);
         //cvImageColor.get()->image.copyTo(*m_color);
 
-        clock_t begin_time = clock();
+        //clock_t begin_time = clock();
 
         m_color.reset(new cv::Mat(1280, 1024, CV_8UC4, cvImageColor->image.data));
         m_depth.reset(new cv::Mat(len_1d, 1, CV_32F, cvImageScaledDepth->image.data));
         m_channels_as_one_float.reset(new cv::Mat(len_1d, 1, CV_32F, m_color->data));
 
         if (!pointCloudAssigned) {
-            m_concat_result.reset(new cv::Mat(len_1d, 8, CV_32F, pclPointCloud->points.data()));
-
-            //pclPointCloud->points.assign((pcl::PointXYZRGB *) m_concat_result->datastart,
-            //                             (pcl::PointXYZRGB *) m_concat_result->dataend);
+            m_pointcloud_points.reset(new cv::Mat(len_1d, 8, CV_32F, pclPointCloud->points.data()));
             pointCloudAssigned = true;
         }
 
         *m_x_mapping = m_x_map->mul(*m_depth);
         *m_y_mapping = m_y_map->mul(*m_depth);
-        m_x_mapping->col(0).copyTo(m_concat_result->col(0));
-        m_y_mapping->col(0).copyTo(m_concat_result->col(1));
-        m_depth->col(0).copyTo(m_concat_result->col(2));
-        m_channels_as_one_float->col(0).copyTo(m_concat_result->col(4));
+        m_x_mapping->col(0).copyTo(m_pointcloud_points->col(0));
+        m_y_mapping->col(0).copyTo(m_pointcloud_points->col(1));
+        m_depth->col(0).copyTo(m_pointcloud_points->col(2));
+        m_channels_as_one_float->col(0).copyTo(m_pointcloud_points->col(4));
 
         //std::vector<pcl::PointXYZRGB, Eigen::aligned_allocator<pcl::PointXYZRGB>> vec;
-        //m_concat_result->col(0).copyTo(vec);
+        //m_pointcloud_points->col(0).copyTo(vec);
 //
 //
         //pclPointCloud->points = *(std::vector<pcl::PointXYZRGB, Eigen::aligned_allocator<pcl::PointXYZRGB> >*) NULL;
 
 
-        ROS_INFO("processPCL1: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
+        //ROS_INFO("processPCL1: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
 
         //m_x_map = cv::Mat(len_1d , 1, CV_32F);
         //m_x_mapping = cv::Mat(len_1d, 1, CV_32F);
@@ -283,8 +330,8 @@ namespace pclpp_adapters {
         //m_padding = cv::Mat(len_1d, 1, CV_32F);
 
 
-        //ROS_INFO("%p %p %p %p %p %p", &(*m_concat_result), m_concat_result->data, m_concat_result->datastart,
-        //         m_concat_result->dataend, &(*pclPointCloud), &pclPointCloud->points);
+        //ROS_INFO("%p %p %p %p %p %p", &(*m_pointcloud_points), m_pointcloud_points->data, m_pointcloud_points->datastart,
+        //         m_pointcloud_points->dataend, &(*pclPointCloud), &pclPointCloud->points);
         //ROS_INFO("%p %p %p %p %p", (void *)pclPointCloud->points.data(), (void *)&pclPointCloud->points.back(),
         //         (void *)&pclPointCloud->points.front(), &(*pclPointCloud->points.begin()),
         //         &(*pclPointCloud->points.end()));
@@ -304,34 +351,34 @@ namespace pclpp_adapters {
 
 
         //begin_time = clock();
-        //cv::hconcat(*concat_matrices, *m_concat_result);
-        //ROS_INFO("processPCL4: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
+        //cv::hconcat(*concat_matrices, *m_pointcloud_points);
+        //ROS_INFO("processPCL4: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));....................................s
 
         // ajoute les index des pixel qui non pas un depth NaN
         std::vector<int> indx;
-        int count_a = 0;
-        for (int i = 0; i < m_depth->rows; i++) {
-            if (!std::isnan(m_depth->at<float>(i, 0))) {
-                indx.push_back(i);
-                count_a++;
-                if (count_a > 5) {
-                    break;
-                }
-            }
-        }
+        //int count_a = 0;
+        //for (int i = 0; i < m_depth->rows; i++) {
+        //    if (!std::isnan(m_depth->at<float>(i, 0))) {
+        //        indx.push_back(i);
+        //        count_a++;
+        //        if (count_a > 5) {
+        //            break;
+        //        }
+        //    }
+        //}
 
 
 
-        //ROS_INFO("%p %p %p %p", &(*m_concat_result), m_concat_result->data, m_concat_result->datastart,
-        //         m_concat_result->dataend);
+        //ROS_INFO("%p %p %p %p", &(*m_pointcloud_points), m_pointcloud_points->data, m_pointcloud_points->datastart,
+        //         m_pointcloud_points->dataend);
         //begin_time = clock();
-        //pcl::PointXYZRGB *pt = (pcl::PointXYZRGB *) m_concat_result->datastart;
+        //pcl::PointXYZRGB *pt = (pcl::PointXYZRGB *) m_pointcloud_points->datastart;
         //pclPointCloud->clear();
         //ROS_INFO("processPCL5: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
 
         //begin_time = clock();
-        //pclPointCloud->points.assign((pcl::PointXYZRGB *) m_concat_result->datastart,
-        //                             (pcl::PointXYZRGB *) m_concat_result->dataend);
+        //pclPointCloud->points.assign((pcl::PointXYZRGB *) m_pointcloud_points->datastart,
+        //                             (pcl::PointXYZRGB *) m_pointcloud_points->dataend);
         //ROS_INFO("processPCL6: %f Hz", 1.0 / (float(clock() - begin_time) /  CLOCKS_PER_SEC));
 
         //*m_pt_cloud = cv::Mat(len_1d, 8, CV_32F, (unsigned char *) pclPointCloud->points.data());
@@ -360,13 +407,13 @@ namespace pclpp_adapters {
         //    }
         //}
 
-        // interpreter m_concat_result comme une mat de bits
+        // interpreter m_pointcloud_points comme une mat de bits
         // et le comparer avec les valeurs de son équivalent  en point cloud
 
 
-        //for (int i = 0; i < m_concat_result->rows; i++) {
+        //for (int i = 0; i < m_pointcloud_points->rows; i++) {
         //    ss.str(std::string());
-        //    ss << m_concat_result->row(i);
+        //    ss << m_pointcloud_points->row(i);
         //    ROS_INFO("{%d} %s", i, ss.str().c_str());
         //}
 
@@ -376,7 +423,7 @@ namespace pclpp_adapters {
         pcl::PointXYZRGB point;
         //for (auto it = indx.begin(); it != indx.end(); ++it) {
         //    ss.str(std::string());
-        //    ss << m_concat_result->row(*it);
+        //    ss << m_pointcloud_points->row(*it);
         //    depth = m_depth->at<float>(*it);
         //    x_map = m_x_map->at<float>(*it);
         //    x_mapping = m_x_mapping->at<float>(*it);
@@ -434,8 +481,6 @@ namespace pclpp_adapters {
         std::cout << std::endl;
         */
         //big_mat = bigmat_f["bigMat"].mat().rowRange(1, 1081);
-
-
     }
 
     void XtionAdapterNodelet::processPCLMessages() {
@@ -483,7 +528,7 @@ namespace pclpp_adapters {
         //m_filler.reset(new cv::Mat(len_1d, 1, CV_32F));
         //m_padding.reset(new cv::Mat(len_1d, 1, CV_32F));
         //m_pt_cloud.reset(new cv::Mat(len_1d, 8, CV_32F));
-        //m_concat_result.reset(new cv::Mat(len_1d, 8, CV_32F));
+        //m_pointcloud_points.reset(new cv::Mat(len_1d, 8, CV_32F));
         //m_channels_as_one_float.reset(new cv::Mat(len_1d, 1, CV_32F, image_color->data));
 
         float *x_m_ptr = (float *) m_x_map->data;
@@ -497,16 +542,16 @@ namespace pclpp_adapters {
 
         m_filler->setTo(1.0f);
         m_padding->setTo(0.0f);
-        m_filler->col(0).copyTo(m_concat_result->col(3));
-        m_padding->col(0).copyTo(m_concat_result->col(5));
-        m_padding->col(0).copyTo(m_concat_result->col(6));
-        m_padding->col(0).copyTo(m_concat_result->col(7));
+        m_filler->col(0).copyTo(m_pointcloud_points->col(3));
+        m_padding->col(0).copyTo(m_pointcloud_points->col(5));
+        m_padding->col(0).copyTo(m_pointcloud_points->col(6));
+        m_padding->col(0).copyTo(m_pointcloud_points->col(7));
 
-        pclPointCloud->points.assign((pcl::PointXYZRGB *) m_concat_result->datastart,
-                                     (pcl::PointXYZRGB *) m_concat_result->dataend);
+        pclPointCloud->points.assign((pcl::PointXYZRGB *) m_pointcloud_points->datastart,
+                                     (pcl::PointXYZRGB *) m_pointcloud_points->dataend);
 
-        //ROS_INFO("%p %p %p %p %p %p", &(*m_concat_result), m_concat_result->data, m_concat_result->datastart,
-        //         m_concat_result->dataend, &(*pclPointCloud), &pclPointCloud->points);
+        //ROS_INFO("%p %p %p %p %p %p", &(*m_pointcloud_points), m_pointcloud_points->data, m_pointcloud_points->datastart,
+        //         m_pointcloud_points->dataend, &(*pclPointCloud), &pclPointCloud->points);
         //ROS_INFO("%p %p %p %p %p", (void *)pclPointCloud->points.data(), (void *)&pclPointCloud->points.back(),
         //         (void *)&pclPointCloud->points.front(), &(*pclPointCloud->points.begin()),
         //         &(*pclPointCloud->points.end()));

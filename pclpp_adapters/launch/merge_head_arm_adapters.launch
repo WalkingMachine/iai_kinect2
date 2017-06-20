@@ -1,0 +1,5 @@
+<launch>
+
+    <include file="$(find pclpp_adapters)/launch/xtion_head_adapter.launch" pass_all_args="true"/>
+    <include file="$(find pclpp_adapters)/launch/xtion_arm_adapter.launch" pass_all_args="true"/>
+</launch>

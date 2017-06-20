@@ -1,16 +1,48 @@
 #include <opencv-3.2.0-dev/opencv/cv.hpp>
 #include <dirent.h>
 #include "../include/pclpp_calibration/calibration_common.h"
-#include "../../iai_kinect2/kinect2_calibration/include/kinect2_calibration/kinect2_calibration_definitions.h"
-#include "../include/pclpp_calibration/calibration_definitions.h"
 
 namespace pclpp_calibration {
 
-    CameraCalibration::CameraCalibration(const std::string &path, const Source mode, const bool circleBoard,
-                      const cv::Size &boardDims, const float boardSize, const bool rational)
+    CameraCalibration::CameraCalibration(const std::string calibrationName, const std::string &path,
+                                         const Source mode, const bool circleBoard, const cv::Size &boardDims,
+                                         const float boardSize, const bool rational, const cv::Size &sizeIr,
+                                         const cv::Size &sizeColor)
         : circleBoard(circleBoard), boardDims(boardDims), boardSize(boardSize),
-          flags(rational ? cv::CALIB_RATIONAL_MODEL : 0), mode(mode), path(path), sizeColor(1920, 1080),
-          sizeIr(512, 424) {
+          flags(rational ? cv::CALIB_RATIONAL_MODEL : 0), mode(mode), path(path), sizeColor(sizeColor),
+          sizeIr(sizeIr),
+          calibPoseFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_color_file", std::string(""))),
+          calibColorFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_ir_file", std::string(""))),
+          calibIrFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_pose_file", std::string(""))),
+          calibCameraMatrixName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_camera_matrix", std::string(""))),
+          calibDistortionName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_distortion", std::string(""))),
+          calibRotationName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_rotation", std::string(""))),
+          calibProjectionName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_projection", std::string(""))),
+          calibTranslationName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_translation", std::string(""))),
+          calibEssentialName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_essential", std::string(""))),
+          calibFundamentalName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_fundamental", std::string(""))),
+          calibFileColor(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_color", std::string(""))),
+          calibFileIrGrey(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_ir_grey", std::string(""))),
+          calibSyncName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_sync", std::string(""))),
+          calibPointsColorFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_points_color", std::string(""))),
+          calibPointsIrFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_points_ir", std::string("")))
+    {
+
         board.resize((unsigned long)boardDims.width * boardDims.height);
         for(size_t r = 0, i = 0; r < (size_t)boardDims.height; ++r)
         {
@@ -48,8 +80,8 @@ namespace pclpp_calibration {
                 continue;
             }
 
-            posSync = filename.rfind(CALIB_SYNC);
-            posColor = filename.rfind(CALIB_FILE_COLOR);
+            posSync = filename.rfind(calibSyncName);
+            posColor = filename.rfind(calibFileColor);
 
             if(posSync != std::string::npos)
             {
@@ -70,7 +102,7 @@ namespace pclpp_calibration {
                 continue;
             }
 
-            posIr = filename.rfind(CALIB_FILE_IR_GREY);
+            posIr = filename.rfind(calibFileIrGrey);
             if(posIr != std::string::npos)
             {
                 std::string frameName = filename.substr(0, posIr);
@@ -95,7 +127,7 @@ namespace pclpp_calibration {
                 }
                 pointsColor.resize(filesColor.size());
                 pointsBoard.resize(filesColor.size(), board);
-                ret = ret && readFiles(filesColor, CALIB_POINTS_COLOR, pointsColor);
+                ret = ret && readFiles(filesColor, calibPointsColorFile, pointsColor);
                 break;
             case IR:
                 if(filesIr.empty())
@@ -105,7 +137,7 @@ namespace pclpp_calibration {
                 }
                 pointsIr.resize(filesIr.size());
                 pointsBoard.resize(filesIr.size(), board);
-                ret = ret && readFiles(filesIr, CALIB_POINTS_IR, pointsIr);
+                ret = ret && readFiles(filesIr, calibPointsIrFile, pointsIr);
                 break;
             case SYNC:
                 if(filesColor.empty() || filesIr.empty())
@@ -117,8 +149,8 @@ namespace pclpp_calibration {
                 pointsIr.resize(filesSync.size());
                 pointsColor.resize(filesSync.size());
                 pointsBoard.resize(filesSync.size(), board);
-                ret = ret && readFiles(filesSync, CALIB_POINTS_COLOR, pointsColor);
-                ret = ret && readFiles(filesSync, CALIB_POINTS_IR, pointsIr);
+                ret = ret && readFiles(filesSync, calibPointsColorFile, pointsColor);
+                ret = ret && readFiles(filesSync, calibPointsIrFile, pointsIr);
                 ret = ret && checkSyncPointsOrder();
                 ret = ret && loadCalibration();
                 break;
@@ -131,10 +163,12 @@ namespace pclpp_calibration {
         switch(mode)
         {
             case COLOR:
-                calibrateIntrinsics(sizeColor, pointsBoard, pointsColor, cameraMatrixColor, distortionColor, rotationColor, projectionColor, rvecsColor, tvecsColor);
+                calibrateIntrinsics(sizeColor, pointsBoard, pointsColor, cameraMatrixColor, distortionColor,
+                                    rotationColor, projectionColor, rvecsColor, tvecsColor);
                 break;
             case IR:
-                calibrateIntrinsics(sizeIr, pointsBoard, pointsIr, cameraMatrixIr, distortionIr, rotationIr, projectionIr, rvecsIr, tvecsIr);
+                calibrateIntrinsics(sizeIr, pointsBoard, pointsIr, cameraMatrixIr, distortionIr, rotationIr,
+                                    projectionIr, rvecsIr, tvecsIr);
                 break;
             case SYNC:
                 calibrateExtrinsics();
@@ -273,13 +307,13 @@ namespace pclpp_calibration {
         switch(mode)
         {
             case SYNC:
-                fs.open(path + CALIB_POSE, cv::FileStorage::WRITE);
+                fs.open(path + calibPoseFile, cv::FileStorage::WRITE);
                 break;
             case COLOR:
-                fs.open(path + CALIB_COLOR, cv::FileStorage::WRITE);
+                fs.open(path + calibColorFile, cv::FileStorage::WRITE);
                 break;
             case IR:
-                fs.open(path + CALIB_IR, cv::FileStorage::WRITE);
+                fs.open(path + calibIrFile, cv::FileStorage::WRITE);
                 break;
         }
 
@@ -292,22 +326,22 @@ namespace pclpp_calibration {
         switch(mode)
         {
             case SYNC:
-                fs << CALIB_ROTATION << rotation;
-                fs << CALIB_TRANSLATION << translation;
-                fs << CALIB_ESSENTIAL << essential;
-                fs << CALIB_FUNDAMENTAL << fundamental;
+                fs << calibRotationName << rotation;
+                fs << calibTranslationName << translation;
+                fs << calibEssentialName << essential;
+                fs << calibFundamentalName << fundamental;
                 break;
             case COLOR:
-                fs << CALIB_CAMERA_MATRIX << cameraMatrixColor;
-                fs << CALIB_DISTORTION << distortionColor;
-                fs << CALIB_ROTATION << rotationColor;
-                fs << CALIB_PROJECTION << projectionColor;
+                fs << calibCameraMatrixName << cameraMatrixColor;
+                fs << calibDistortionName << distortionColor;
+                fs << calibRotationName << rotationColor;
+                fs << calibProjectionName << projectionColor;
                 break;
             case IR:
-                fs << CALIB_CAMERA_MATRIX << cameraMatrixIr;
-                fs << CALIB_DISTORTION << distortionIr;
-                fs << CALIB_ROTATION << rotationIr;
-                fs << CALIB_PROJECTION << projectionIr;
+                fs << calibCameraMatrixName << cameraMatrixIr;
+                fs << calibDistortionName << distortionIr;
+                fs << calibRotationName << rotationIr;
+                fs << calibProjectionName << projectionIr;
                 break;
         }
         fs.release();
@@ -316,12 +350,12 @@ namespace pclpp_calibration {
     bool CameraCalibration::loadCalibration() {
         cv::FileStorage fs;
 
-        if(fs.open(path + CALIB_COLOR, cv::FileStorage::READ))
+        if(fs.open(path + calibColorFile, cv::FileStorage::READ))
         {
-            fs[CALIB_CAMERA_MATRIX] >> cameraMatrixColor;
-            fs[CALIB_DISTORTION] >> distortionColor;
-            fs[CALIB_ROTATION] >> rotationColor;
-            fs[CALIB_PROJECTION] >> projectionColor;
+            fs[calibCameraMatrixName] >> cameraMatrixColor;
+            fs[calibDistortionName] >> distortionColor;
+            fs[calibRotationName] >> rotationColor;
+            fs[calibProjectionName] >> projectionColor;
             fs.release();
         }
         else
@@ -330,12 +364,12 @@ namespace pclpp_calibration {
             return false;
         }
 
-        if(fs.open(path + CALIB_IR, cv::FileStorage::READ))
+        if(fs.open(path + calibIrFile, cv::FileStorage::READ))
         {
-            fs[CALIB_CAMERA_MATRIX] >> cameraMatrixIr;
-            fs[CALIB_DISTORTION] >> distortionIr;
-            fs[CALIB_ROTATION] >> rotationIr;
-            fs[CALIB_PROJECTION] >> projectionIr;
+            fs[calibCameraMatrixName] >> cameraMatrixIr;
+            fs[calibDistortionName] >> distortionIr;
+            fs[calibRotationName] >> rotationIr;
+            fs[calibProjectionName] >> projectionIr;
             fs.release();
         }
         else
@@ -347,8 +381,27 @@ namespace pclpp_calibration {
         return true;
     }
 
-    DepthCalibration::DepthCalibration(const std::string &path, const cv::Size &boardDims, const float boardSize)
-        : path(path), size(512, 424) {
+    DepthCalibration::DepthCalibration(const std::string calibrationName,
+                                       const std::string &path, const cv::Size &boardDims, const float boardSize,
+                                       const cv::Size &sizeIr)
+        : path(path), size(sizeIr),
+          calibIrFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_pose_file", std::string(""))),
+          calibDepthFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_depth_file", std::string(""))),
+          calibCameraMatrixName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_camera_matrix", std::string(""))),
+          calibDistortionName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_distortion", std::string(""))),
+          calibDepthShiftName(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_depth_shift", std::string(""))),
+          calibFileIrGrey(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_ir_grey", std::string(""))),
+          calibFileDepth(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_depth", std::string(""))),
+          calibPointsIrFile(ros::param::param<std::string>(
+                  "/pcl_preprocessing" + calibrationName + "/definitions/calib_points_ir", std::string("")))
+    {
         board.resize((unsigned long)boardDims.width * boardDims.height);
         for(size_t r = 0, i = 0; r < (size_t)boardDims.height; ++r)
         {
@@ -389,7 +442,7 @@ namespace pclpp_calibration {
               continue;
             }*/
 
-            pos = filename.rfind(CALIB_FILE_IR_GREY);
+            pos = filename.rfind(calibFileIrGrey);
             if(pos != std::string::npos)
             {
                 std::string frameName = filename.substr(0, pos);
@@ -609,7 +662,7 @@ namespace pclpp_calibration {
 #pragma omp parallel for
         for(size_t i = 0; i < files.size(); ++i)
         {
-            std::string pointsname = path + files[i] + CALIB_POINTS_IR;
+            std::string pointsname = path + files[i] + calibPointsIrFile;
 
 #pragma omp critical
             ROS_INFO("restoring file: %s", files[i].c_str());
@@ -627,7 +680,7 @@ namespace pclpp_calibration {
             {
                 file["points"] >> points[i];
                 file.release();
-                images[i] = path + files[i] + CALIB_FILE_DEPTH;
+                images[i] = path + files[i] + calibFileDepth;
             }
         }
         return ret;
@@ -636,15 +689,15 @@ namespace pclpp_calibration {
     bool DepthCalibration::loadCalibration() {
         cv::FileStorage fs;
 
-        if(fs.open(path + CALIB_IR, cv::FileStorage::READ))
+        if(fs.open(path + calibIrFile, cv::FileStorage::READ))
         {
-            fs[CALIB_CAMERA_MATRIX] >> cameraMatrix;
-            fs[CALIB_DISTORTION] >> distortion;
+            fs[calibCameraMatrixName] >> cameraMatrix;
+            fs[calibDistortionName] >> distortion;
             fs.release();
         }
         else
         {
-            ROS_ERROR("couldn't read calibration '%s%s'!", path.c_str(), CALIB_IR);
+            ROS_ERROR("couldn't read calibration '%s%s'!", path.c_str(), calibIrFile.c_str());
             return false;
         }
 
@@ -654,9 +707,9 @@ namespace pclpp_calibration {
     void DepthCalibration::storeCalibration(const double depthShift) const {
         cv::FileStorage fs;
 
-        if(fs.open(path + CALIB_DEPTH, cv::FileStorage::WRITE))
+        if(fs.open(path + calibDepthFile, cv::FileStorage::WRITE))
         {
-            fs << CALIB_DEPTH_SHIFT << depthShift;
+            fs << calibDepthShiftName << depthShift;
             fs.release();
         }
         else

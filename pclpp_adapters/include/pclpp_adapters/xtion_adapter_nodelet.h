@@ -18,6 +18,10 @@
 #include <cv_bridge/rgb_colors.h>
 #include <cv.hpp>
 
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <geometry_msgs/TransformStamped.h>
+
 #ifndef PCL_PREPROCESSING_XTION_ADAPTER_NODELET_H
 #define PCL_PREPROCESSING_XTION_ADAPTER_NODELET_H
 
@@ -54,6 +58,7 @@ namespace pclpp_adapters {
         void prepareMake3D();
         void processPCL1();
         void processPCL2();
+        void publishTf();
 
         const uint32_t queueSize;
         const bool useExact, useCompressed;
@@ -108,10 +113,18 @@ namespace pclpp_adapters {
         boost::shared_ptr<cv::Mat> m_padding;
         boost::shared_ptr<cv::Mat> m_channels_as_one_float;
         boost::shared_ptr<cv::Mat> m_pt_cloud;
-        boost::shared_ptr<cv::Mat> m_concat_result;
+        boost::shared_ptr<cv::Mat> m_pointcloud_points;
         boost::shared_ptr<std::vector<cv::Mat>> concat_matrices;
 
         boost::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB> > pclPointCloud;
+
+        const bool useStaticTf, useTfTuning;
+        const double staticTfX, staticTfY, staticTfZ, staticTfRoll, staticTfPitch, staticTfYaw;
+        const double tfTuningX, tfTuningY, tfTuningZ, tfTuningRoll, tfTuningPitch, tfTuningYaw;
+
+        boost::shared_ptr<tf2_ros::TransformBroadcaster> tfBroadcaster;
+        boost::shared_ptr<geometry_msgs::TransformStamped> tfStamped;
+        boost::shared_ptr<tf2::Quaternion> tfQuaternion;
     };
 
 

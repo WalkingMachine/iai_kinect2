@@ -11,3 +11,20 @@ definitions:
   calib_essential: "essential"
   calib_fundamental: "fundamental"
   calib_depth_shift: "depthShift"
+  calib_file_color: "_color.png"
+  calib_file_ir: "_ir.png"
+  calib_file_ir_grey: "_grey_ir.png"
+  calib_file_depth: "_depth.png"
+  calib_points_color: "_color_points.yaml"
+  calib_points_ir: "_ir_points.yaml"
+  calib_sync: "_sync"
+  calib_sync_color: "_sync_color.png"
+  calib_sync_ir: "_sync_ir.png"
+  calib_sync_ir_grey: "_sync_grey_ir.png"
+
+calibration:
+  symmetric: true
+  circle_board: false
+  board_dims: [7, 6]
+  board_size: 0.03
+  source_mode: "RGB"

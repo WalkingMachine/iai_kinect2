@@ -1,0 +1,18 @@
+<launch>
+
+    <arg name="name"                value="xtion_head" />
+    <arg name="remote_debug"        value="true" />
+    <arg name="debug_port"          value="39800" />
+    <arg name="launch_prefix"       default="gdbserver :$(arg debug_port)"
+         if="$(arg remote_debug)"/>
+    <arg name="launch_prefix"       value=""
+         unless="$(arg remote_debug)" />
+
+    <rosparam ns="/pcl_preprocessing"  file="$(find pclpp_calibration)/config/params.yaml"/>
+    <node launch-prefix="$(arg launch_prefix)" pkg="pclpp_calibration" type="xtion_calibration_node"
+          name="$(arg name)_calibration" output="screen">
+    </node>
+
+
+
+</launch>

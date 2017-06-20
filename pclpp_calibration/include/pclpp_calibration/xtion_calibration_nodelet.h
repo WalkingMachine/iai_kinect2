@@ -9,6 +9,7 @@
 #include <opencv-3.2.0-dev/opencv2/core/mat.hpp>
 #include <image_transport/subscriber_filter.h>
 #include <opencv-3.2.0-dev/opencv2/imgproc.hpp>
+#include <pcl-1.8/pcl/io/boost.h>
 
 #ifndef PCLPP_XTION_CALIBRATION_NODELET_H
 #define PCLPP_XTION_CALIBRATION_NODELET_H
@@ -89,6 +90,12 @@ namespace pclpp_calibration {
 
         int minIr, maxIr;
         cv::Ptr<cv::CLAHE> clahe;
+
+        const std::string calibSyncName, calibFileColor, calibPointsColorFile, calibPointsIrFile,
+                calibFileIrGrey, calibFileDepth, calibFileIr;
+
+        const std::vector<int> calibBoardDims;
+        const std::string calibSourceMode;
 
     };
 
