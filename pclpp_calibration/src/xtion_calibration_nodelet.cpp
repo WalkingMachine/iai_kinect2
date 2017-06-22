@@ -15,25 +15,25 @@ namespace pclpp_calibration {
               update(true), foundColor(false), foundIr(false), frame(0), spinner(0),
               minIr(0), maxIr(0x7FFF),
               calibSyncName(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_sync", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_sync", std::string(""))),
               calibFileColor(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_color", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_file_color", std::string(""))),
               calibPointsColorFile(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_points_color", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_points_color", std::string(""))),
               calibPointsIrFile(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_points_ir", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_points_ir", std::string(""))),
               calibFileIrGrey(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_ir_grey", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_file_ir_grey", std::string(""))),
               calibFileDepth(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_depth", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_file_depth", std::string(""))),
               calibFileIr(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/definitions/calib_file_ir", std::string(""))),
+                      "/pcl_preprocessing/definitions/calib_file_ir", std::string(""))),
               calibBoardDims(ros::param::param<std::vector<int>>(
-                      "/pcl_preprocessing" + calibrationName + "/calibration/board_dims", {})),
+                      "/pcl_preprocessing/calibration/board_dims", {})),
               boardSize(ros::param::param<float>(
-                      "/pcl_preprocessing" + calibrationName + "/calibration/board_size", 0.0f)),
+                      "/pcl_preprocessing/calibration/board_size", 0.0f)),
               calibSourceMode(ros::param::param<std::string>(
-                      "/pcl_preprocessing" + calibrationName + "/calibration/source_mode", std::string()))
+                      "/pcl_preprocessing/calibration/source_mode", std::string()))
     {
         boardDims = cv::Size(calibBoardDims[0], calibBoardDims[1]);
         if (boost::to_upper_copy(calibSourceMode) == "COLOR") {
